@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#123c69">
+  <title>Dashboard kết quả 07 phiên tập huấn Gia Lai</title>
+  <link rel="stylesheet" href="styles.css?v=gia-lai-20261001-1">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-brand">
+      <img class="brand-logo" src="assets/logo-kiem-toan-nha-nuoc.jpg" alt="Logo Kiểm toán nhà nước">
+      <div>
+        <p class="eyebrow">KIỂM TOÁN NHÀ NƯỚC</p>
+        <h1 id="session-title">Kết quả 07 phiên tập huấn Gia Lai</h1>
+        <p id="session-subtitle" class="subtitle">Mỗi phiên được tổng hợp độc lập</p>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <span id="data-status" class="status status-loading">Đang tải dữ liệu…</span>
+      <button id="refresh-button" class="button" type="button">Cập nhật</button>
+      <button id="export-button" class="button button-export" type="button">Xuất báo cáo</button>
+      <a id="admin-button" class="button button-admin" target="_blank" rel="noopener" hidden>Quản trị phiên</a>
+      <button id="fullscreen-button" class="button button-secondary" type="button">Toàn màn hình</button>
+    </div>
+  </header>
+
+  <nav id="session-nav" class="session-nav" aria-label="Chọn phiên"></nav>
+  <div id="global-timer-banner" class="global-timer-banner" hidden></div>
+
+  <main id="dashboard" class="dashboard" aria-live="polite">
+    <section class="loading-panel">
+      <div class="spinner"></div>
+      <p>Đang tổng hợp kết quả…</p>
+    </section>
+  </main>
+
+  <dialog id="qr-dialog" class="qr-dialog" aria-labelledby="qr-dialog-title">
+    <button id="qr-dialog-close" class="dialog-close" type="button" aria-label="Đóng mã QR">×</button>
+    <p id="qr-dialog-kicker">MÃ QR LÀM BÀI</p>
+    <h2 id="qr-dialog-title">Phiên 1</h2>
+    <img id="qr-dialog-image" alt="Mã QR làm bài">
+    <p class="qr-dialog-note">Quét mã để mở biểu mẫu của phiên này</p>
+  </dialog>
+
+  <dialog id="top-participant-dialog" class="top-participant-dialog" aria-labelledby="participant-dialog-title">
+    <button id="participant-dialog-close" class="dialog-close" type="button" aria-label="Đóng chi tiết">×</button>
+    <div id="participant-dialog-content"></div>
+  </dialog>
+
+  <aside id="session-control" class="session-control" hidden>
+    <button id="control-fab" class="control-fab" type="button" aria-expanded="false" aria-controls="control-panel" aria-label="Mở điều khiển phiên">+</button>
+    <section id="control-panel" class="control-panel" hidden>
+      <div class="control-panel-head">
+        <div><span>ĐIỀU KHIỂN NHANH</span><strong id="control-session-label">Phiên 1</strong></div>
+        <button id="control-panel-close" type="button" aria-label="Đóng điều khiển">×</button>
+      </div>
+      <iframe id="control-frame" title="Chốt hoặc mở lại phiên" loading="lazy"></iframe>
+      <div id="demo-control" class="demo-control" hidden></div>
+    </section>
+  </aside>
+
+  <footer>
+    <span id="updated-at"></span>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js?v=gia-lai-20261001-1"></script>
+</body>
+</html>

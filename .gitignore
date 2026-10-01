@@ -1,0 +1,10 @@
+# Nội bộ vận hành, không đưa lên GitHub Pages công khai.
+apps-script/
+tests/
+README.md
+CHAY_DEMO_LOCAL.cmd
+
+# Rác môi trường và tệp sinh tự động.
+*.log
+.DS_Store
+Thumbs.db

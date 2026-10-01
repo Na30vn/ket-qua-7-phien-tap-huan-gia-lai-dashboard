@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-01T03:00:00.000Z",
+  "sessions": [
+    {
+      "id": 1,
+      "name": "Phiên 1",
+      "kind": "ordering",
+      "typeLabel": "Sắp xếp thứ tự",
+      "description": "Quy trình quản lý ngân sách cấp xã",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "ordering": {
+        "correctSequence": "3, 5, 1, 6, 4, 11, 9, 8, 10, 13, 2, 12, 7",
+        "correctCount": 0,
+        "commonSequences": []
+      },
+      "prompt": null
+    },
+    {
+      "id": 2,
+      "name": "Phiên 2",
+      "kind": "open",
+      "typeLabel": "Tình huống tự luận",
+      "description": "Công khai ngân sách cấp xã",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "referenceAnswer": [
+        "Bổ sung số liệu và thuyết minh dự toán trình Hội đồng nhân dân cấp xã.",
+        "Bổ sung thuyết minh quyết toán đã được phê chuẩn.",
+        "Công khai tình hình thực hiện theo các mốc 03, 06, 09 tháng và năm."
+      ],
+      "responses": [],
+      "prompt": null
+    },
+    {
+      "id": 3,
+      "name": "Phiên 3",
+      "kind": "quiz",
+      "typeLabel": "Trắc nghiệm 9 câu",
+      "description": "Lập, phân bổ, giao và điều chỉnh dự toán",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "questions": [],
+      "prompt": null
+    },
+    {
+      "id": 4,
+      "name": "Phiên 4",
+      "kind": "quiz",
+      "typeLabel": "Trắc nghiệm 9 câu",
+      "description": "Điều hành và quyết toán ngân sách xã",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "questions": [],
+      "prompt": null
+    },
+    {
+      "id": 5,
+      "name": "Phiên 5",
+      "kind": "quiz",
+      "typeLabel": "Trắc nghiệm 9 câu",
+      "description": "Nghiệp vụ kế toán",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "questions": [],
+      "prompt": null
+    },
+    {
+      "id": 6,
+      "name": "Phiên 6",
+      "kind": "true_false",
+      "typeLabel": "10 câu Đúng/Sai và giải thích",
+      "description": "Tiêu chuẩn, định mức máy móc thiết bị và tài sản công",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "questions": [],
+      "prompt": null
+    },
+    {
+      "id": 7,
+      "name": "Phiên 7",
+      "kind": "open",
+      "typeLabel": "Phân tích hồ sơ",
+      "description": "Hồ sơ mua sắm không quá 100 triệu đồng",
+      "totalResponses": 0,
+      "participatingUnits": 0,
+      "totalUnits": 135,
+      "scoreStats": { "count": 0, "distribution": [] },
+      "referenceAnswer": [
+        "Sửa thẩm quyền duyệt dự toán.",
+        "Bỏ bước trình quyết định tiêu chuẩn, định mức không cần thiết.",
+        "Sửa thẩm quyền phê duyệt chủ trương và dự kiến kinh phí.",
+        "Bổ sung biên bản giao nhận và ghi tăng tài sản cố định."
+      ],
+      "responses": [],
+      "prompt": null
+    }
+  ]
+}
