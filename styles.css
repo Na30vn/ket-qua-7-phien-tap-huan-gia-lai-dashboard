@@ -216,7 +216,7 @@ h1 {
 }
 
 .content-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
-.panel { padding: 21px; }
+.panel { min-width: 0; padding: 21px; }
 .panel.full { grid-column: 1 / -1; }
 .panel-primary { border-top: 4px solid var(--cyan); }
 .panel:nth-child(2n) { border-top-color: #e08a18; }
@@ -358,7 +358,7 @@ h1 {
 .sample-number b { display: grid; place-items: center; min-width: 42px; height: 42px; padding: 0 8px; border-radius: 10px; color: #fff; background: linear-gradient(145deg,#5f4ab4,#806dd0); font-size: 19px; font-weight: 900; box-shadow: 0 4px 9px rgba(79,60,155,.2); }
 .sample-number i { color: #978dcc; font-style: normal; font-size: 17px; font-weight: 900; }
 
-.tf-grid { display: grid; grid-template-columns: repeat(7,minmax(130px,1fr)); gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.tf-grid { display: grid; min-width: 0; max-width: 100%; grid-template-columns: repeat(7,minmax(130px,1fr)); gap: 10px; overflow-x: auto; padding-bottom: 4px; }
 .tf-card { min-width: 130px; overflow: hidden; padding: 0; border: 2px solid #c8d6e4; border-radius: 12px; color: #123c69; text-align: left; background: #fff; cursor: pointer; }
 .tf-card.active { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(18,60,105,.12); }
 .tf-card > span { display: block; padding: 9px 11px; color: #fff; background: var(--navy); font-size: 14px; font-weight: 900; }
