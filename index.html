@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#123c69">
   <title>Dashboard kết quả 07 phiên tập huấn Gia Lai</title>
-  <link rel="stylesheet" href="styles.css?v=gia-lai-20261001-2">
+  <link rel="stylesheet" href="styles.css?v=gia-lai-20261001-3">
 </head>
 <body>
   <header class="hero">
@@ -21,13 +21,41 @@
       <span id="data-status" class="status status-loading">Đang tải dữ liệu…</span>
       <button id="refresh-button" class="button" type="button">Cập nhật</button>
       <button id="export-button" class="button button-export" type="button">Xuất báo cáo</button>
-      <a id="admin-button" class="button button-admin" target="_blank" rel="noopener" hidden>Quản trị phiên</a>
+      <button id="admin-button" class="button button-admin" type="button" hidden>Quản trị phiên</button>
       <button id="fullscreen-button" class="button button-secondary" type="button">Toàn màn hình</button>
     </div>
   </header>
 
   <nav id="session-nav" class="session-nav" aria-label="Chọn phiên"></nav>
   <div id="global-timer-banner" class="global-timer-banner" hidden></div>
+
+  <dialog id="admin-entry-dialog" class="admin-entry-dialog" aria-labelledby="admin-entry-title">
+    <form id="admin-entry-form">
+      <p class="admin-entry-kicker">DASHBOARD GIA LAI</p>
+      <h2 id="admin-entry-title">Vào chế độ quản trị</h2>
+      <p>Nhập email được cấp quyền. Google sẽ xác thực tài khoản trước khi cho phép bấm Mở hoặc Kết thúc phiên; chỉ gõ email không cấp quyền quản trị.</p>
+      <label for="admin-entry-email">Email quản trị</label>
+      <input id="admin-entry-email" type="email" autocomplete="email" placeholder="ten@..." required>
+      <div class="admin-entry-actions">
+        <button class="button button-admin" type="submit">Tiếp tục quản trị</button>
+        <button id="admin-entry-public" class="button" type="button">Xem công khai</button>
+      </div>
+    </form>
+  </dialog>
+
+  <section id="session-control" class="session-control session-control-inline" hidden>
+    <button id="control-fab" class="control-fab" type="button" aria-expanded="true" aria-controls="control-panel" aria-label="Mở điều khiển phiên" hidden>+</button>
+    <div id="control-panel" class="control-panel">
+      <div class="control-panel-head">
+        <div><span>ĐIỀU KHIỂN NGAY TRÊN PHIÊN</span><strong id="control-session-label">Phiên 1</strong></div>
+        <button id="control-panel-close" type="button" aria-label="Đóng điều khiển" hidden>×</button>
+      </div>
+      <p class="control-auth-note">Chỉ tài khoản Google được cấp quyền mới sử dụng được các nút bên dưới. Nếu Google yêu cầu cấp quyền lần đầu, dùng liên kết xác thực rồi quay lại dashboard.</p>
+      <a id="control-auth-link" class="control-auth-link" target="_blank" rel="noopener">Xác thực Google lần đầu</a>
+      <iframe id="control-frame" title="Mở hoặc kết thúc phiên" loading="lazy"></iframe>
+      <div id="demo-control" class="demo-control" hidden></div>
+    </div>
+  </section>
 
   <main id="dashboard" class="dashboard" aria-live="polite">
     <section class="loading-panel">
@@ -49,23 +77,11 @@
     <div id="participant-dialog-content"></div>
   </dialog>
 
-  <aside id="session-control" class="session-control" hidden>
-    <button id="control-fab" class="control-fab" type="button" aria-expanded="false" aria-controls="control-panel" aria-label="Mở điều khiển phiên">+</button>
-    <section id="control-panel" class="control-panel" hidden>
-      <div class="control-panel-head">
-        <div><span>ĐIỀU KHIỂN NHANH</span><strong id="control-session-label">Phiên 1</strong></div>
-        <button id="control-panel-close" type="button" aria-label="Đóng điều khiển">×</button>
-      </div>
-      <iframe id="control-frame" title="Chốt hoặc mở lại phiên" loading="lazy"></iframe>
-      <div id="demo-control" class="demo-control" hidden></div>
-    </section>
-  </aside>
-
   <footer>
     <span id="updated-at"></span>
   </footer>
 
   <script src="config.js"></script>
-  <script src="app.js?v=gia-lai-20261001-2"></script>
+  <script src="app.js?v=gia-lai-20261001-3"></script>
 </body>
 </html>

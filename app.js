@@ -10,6 +10,9 @@
   const sessionTitle = document.getElementById("session-title");
   const exportButton = document.getElementById("export-button");
   const adminButton = document.getElementById("admin-button");
+  const adminEntryDialog = document.getElementById("admin-entry-dialog");
+  const adminEntryForm = document.getElementById("admin-entry-form");
+  const adminEntryEmail = document.getElementById("admin-entry-email");
   const qrDialog = document.getElementById("qr-dialog");
   const qrDialogImage = document.getElementById("qr-dialog-image");
   const qrDialogTitle = document.getElementById("qr-dialog-title");
@@ -17,6 +20,7 @@
   const controlFab = document.getElementById("control-fab");
   const controlPanel = document.getElementById("control-panel");
   const controlFrame = document.getElementById("control-frame");
+  const controlAuthLink = document.getElementById("control-auth-link");
   const demoControl = document.getElementById("demo-control");
   const controlSessionLabel = document.getElementById("control-session-label");
   const globalTimerBanner = document.getElementById("global-timer-banner");
@@ -51,6 +55,9 @@
   const demoSessionStates = new Map();
   const controlSessionStates = new Map();
   const pendingSessionActions = new Map();
+  let adminRequested = false;
+  let adminMessageSource = null;
+  let adminChannelToken = "";
 
   configureAdminLinks();
 
@@ -76,13 +83,12 @@
       sessionControl.hidden = true;
       return;
     }
-    // The deployed Gia Lai admin app currently provides the full control page only.
-    // Keep the legacy compact iframe and report button hidden until those routes exist.
     sessionControl.hidden = true;
     exportButton.hidden = true;
     const separator = config.adminUrl.includes("?") ? "&" : "?";
-    adminButton.href = `${config.adminUrl}${separator}admin=1`;
+    controlAuthLink.href = `${config.adminUrl}${separator}admin=1`;
     adminButton.hidden = false;
+    adminEntryDialog.showModal();
   }
 
   function getSessionFromUrl() {
@@ -280,11 +286,13 @@
       if (!controlPanel.hidden) renderDemoQuickControl(session);
       return;
     }
-    if (!config.adminUrl) return;
+    if (!config.adminUrl || !adminRequested) return;
     controlSessionLabel.textContent = `Phiên ${session.id}`;
     const separator = config.adminUrl.includes("?") ? "&" : "?";
-    const compactUrl = `${config.adminUrl}${separator}admin=1&view=compact&session=${session.id}`;
+    if (controlFrame.dataset.session !== String(session.id)) adminChannelToken = crypto.randomUUID();
+    const compactUrl = `${config.adminUrl}${separator}admin=1&view=compact&session=${session.id}&email=${encodeURIComponent(adminEntryEmail.value.trim().toLowerCase())}&channelToken=${encodeURIComponent(adminChannelToken)}`;
     if (controlFrame.dataset.session !== String(session.id)) {
+      adminMessageSource = null;
       controlFrame.dataset.session = String(session.id);
       controlFrame.src = compactUrl;
     }
@@ -1001,6 +1009,31 @@
   function renderEmpty(text = "Chưa có bài làm. Dashboard sẽ tự cập nhật khi có dữ liệu.") { return `<div class="empty">${escapeHtml(text)}</div>`; }
   function renderInlineEmpty(text = "Chưa có dữ liệu.") { return `<div class="inline-empty">${escapeHtml(text)}</div>`; }
 
+  adminEntryForm.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!adminEntryEmail.reportValidity()) return;
+    // The typed email is a UI hint only. The private Apps Script verifies the
+    // signed-in Google account against its server-side allowlist.
+    adminRequested = true;
+    adminMessageSource = null;
+    controlFrame.dataset.session = "";
+    sessionControl.hidden = false;
+    controlPanel.hidden = false;
+    controlFrame.hidden = false;
+    adminEntryDialog.close();
+    const session = payload?.sessions?.find(item => Number(item.id) === activeSession);
+    if (session) updateQuickControl(session);
+  });
+  document.getElementById("admin-entry-public").addEventListener("click", () => {
+    adminRequested = false;
+    adminMessageSource = null;
+    adminChannelToken = "";
+    sessionControl.hidden = true;
+    controlFrame.removeAttribute("src");
+    controlFrame.dataset.session = "";
+    adminEntryDialog.close();
+  });
+  adminButton.addEventListener("click", () => adminEntryDialog.showModal());
   document.getElementById("refresh-button").addEventListener("click", () => loadData(true));
   document.getElementById("fullscreen-button").addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); });
   document.getElementById("qr-dialog-close").addEventListener("click", () => qrDialog.close());
@@ -1031,12 +1064,21 @@
     controlFab.textContent = "+";
   });
   function closeControlPanel() {
+    if (adminRequested) return;
     controlPanel.hidden = true;
     controlFab.setAttribute("aria-expanded", "false");
     controlFab.textContent = "+";
   }
   window.addEventListener("message", event => {
-    if (event.source !== controlFrame.contentWindow) return;
+    const trustedAdminOrigin = /^https:\/\/(?:[a-z0-9-]+\.)*googleusercontent\.com$/i.test(event.origin)
+      || event.origin === "https://script.google.com";
+    if (!adminRequested || !trustedAdminOrigin || !adminChannelToken || event.data?.channelToken !== adminChannelToken) return;
+    if (event.data?.type === "gl-admin-hello") {
+      adminMessageSource = event.source;
+      event.source?.postMessage({ type: "gl-admin-allow", channelToken: adminChannelToken }, event.origin);
+      return;
+    }
+    if (event.source !== adminMessageSource) return;
     if (event.data?.type === "dashboard-session-pending") {
       closeControlPanel();
       if (event.data.action === "close") {
