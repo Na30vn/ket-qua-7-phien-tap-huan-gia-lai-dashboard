@@ -1222,7 +1222,7 @@
     setTimeout(() => loadData(false), 700);
   });
   loadData();
-  if (Number(config.refreshSeconds) > 0) timer = setInterval(() => loadData(false), Number(config.refreshSeconds) * 1000);
+  if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden) loadData(false); }, Number(config.refreshSeconds) * 1000);
   const countdownTicker = setInterval(updateCountdowns, 500);
   window.addEventListener("focus", () => loadData(false));
   document.addEventListener("visibilitychange", () => { if (!document.hidden) loadData(false); });
