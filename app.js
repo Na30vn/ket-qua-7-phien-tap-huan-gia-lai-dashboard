@@ -563,7 +563,7 @@
       const positionText = person.position ? escapeHtml(person.position) : "";
       const hasDetails = !!(person.questionDetails?.length || person.matchedItems?.length || person.essay);
       const cardTag = hasDetails ? "button" : "div";
-      const cardAction = hasDetails ? ` type="button" data-open-participant="${actualIndex}"` : "";
+      const cardAction = hasDetails ? ` type="button" data-open-participant="${actualIndex}" aria-label="Xem bài làm của ${escapeHtml(person.name)}"` : "";
       const detailHint = hasDetails ? `<span class="view-detail-hint">Xem chi tiết <b>→</b></span>` : "";
       
       if (!featuredCard) {
@@ -579,21 +579,22 @@
             <span class="ranking-actions"><span class="score-pill">${escapeHtml(scoreBadge)}</span>${detailHint}</span>
           </${cardTag}>`;
       }
+      const initials = String(person.name || "?").trim().split(/\s+/).slice(-2).map(word => word[0]).join("").toUpperCase();
+      const seconds = Math.max(0, Math.floor(Number(person.durationSeconds) || 0));
+      const duration = Number.isFinite(Number(person.durationSeconds)) ? `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}` : "—";
+      const leaves = `<path d="M27 57 C12 43 11 27 19 9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M22 53 C12 55 8 48 9 42 C17 43 22 47 22 53 M17 42 C8 43 5 36 7 30 C14 31 18 36 17 42 M15 31 C7 29 6 21 9 17 C15 20 17 26 15 31 M17 20 C11 16 13 8 18 4 C22 10 21 16 17 20 M24 48 C30 43 28 36 24 33 C20 39 20 44 24 48 M20 35 C26 30 25 24 21 20 C17 25 17 31 20 35"/>`;
       return `
         <${cardTag}${cardAction} class="top-participant-card ${featuredCard ? "podium-card" : "ranking-card"} ${rankClass}">
-          <span class="rank-badge">#${rank}</span>
-          <span class="participant-info">
+          <span class="podium-medal" aria-label="Hạng ${rank}"><svg viewBox="0 0 100 70" aria-hidden="true"><g fill="currentColor">${leaves}<g transform="translate(100 0) scale(-1 1)">${leaves}</g></g><circle cx="50" cy="29" r="24" fill="currentColor" stroke="rgba(255,255,255,.65)" stroke-width="3"/><text x="50" y="39" text-anchor="middle" fill="white" font-family="Georgia,serif" font-size="32">${rank}</text></svg></span>
+          <span class="podium-identity"><span class="podium-avatar" aria-hidden="true">${escapeHtml(initials)}</span><span class="participant-info">
             <strong class="participant-name">${escapeHtml(person.name || "Chưa có họ tên")}</strong>
             <span class="participant-meta-line">
               <small class="participant-unit">${escapeHtml(person.unit || "Chưa xác định đơn vị")}</small>
               ${positionText ? `<small class="participant-position">${positionText}</small>` : ""}
             </span>
-          </span>
-          <span class="participant-card-footer">
-            <span class="score-pill">${escapeHtml(scoreBadge)}</span>
-            <small class="participant-submitted"><b>${escapeHtml(formatRankTime(person))}</b></small>
-            ${detailHint}
-          </span>
+          </span></span>
+          <span class="podium-stats"><span><i aria-hidden="true">✓</i><span><strong>${escapeHtml(scoreBadge)}</strong><small>Kết quả</small></span></span><span><i class="podium-clock" aria-hidden="true">◷</i><span><strong>${duration}</strong><small>Nộp sau khi mở phiên</small></span></span></span>
+          <span class="podium-cta">${hasDetails ? "Xem bài làm <b>→</b>" : "Chưa có chi tiết bài làm"}</span>
         </${cardTag}>`;
     };
 
@@ -602,11 +603,11 @@
         <div class="leaderboard-heading">
           <div>
             <p class="panel-kicker">VINH DANH TOP NỘI DUNG TỐT NHẤT</p>
-            <h3>${label} bài làm xuất sắc nhất</h3>
+            <h3>${label} bài làm dẫn đầu</h3>
           </div>
           <span class="leaderboard-ai-note">${methodNote}</span>
         </div>
-        <div class="top-podium" aria-label="Ba học viên đứng đầu">${featured.map((person, index) => personCard(person, index, true)).join("")}</div>
+        <div class="top-podium" data-count="${featured.length}" aria-label="Ba học viên đứng đầu">${featured.map((person, index) => personCard(person, index, true)).join("")}</div>
         ${remaining.length ? `<ol class="top-participants-list" start="4">${remaining.map((person, index) => `<li>${personCard(person, index + 3, false)}</li>`).join("")}</ol>` : ""}
       </section>
     `;
@@ -993,7 +994,7 @@
             <tbody>
               ${questions.map(q => `
                 <tr>
-                  <td><strong>Câu ${q.number}</strong></td>
+                  <td><strong>Câu ${q.number}</strong><p>${escapeHtml(q.title || "")}</p></td>
                   <td>
                     <span>Học viên: <b>${escapeHtml(q.userChoice)}</b></span><br>
                     <small>Đáp án: <b class="correct-text">${escapeHtml(q.correctChoice)}</b></small>
@@ -1025,7 +1026,7 @@
         </div>
         ${person.aiFeedback ? `<div class="modal-feedback-box"><strong>Nhận xét từ Gemini AI:</strong> <p>${escapeHtml(person.aiFeedback)}</p></div>` : ""}
         <div class="modal-section">
-          <h3>Bài làm nguyên văn của học viên:</h3>
+          <h3>Bài làm của học viên:</h3>
           <blockquote class="modal-essay-box">${escapeHtml(person.essay || "Chưa có bài làm")}</blockquote>
         </div>
         ${items.length ? `
