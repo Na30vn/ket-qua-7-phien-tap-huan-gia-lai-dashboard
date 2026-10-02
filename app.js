@@ -65,6 +65,7 @@
   let adminRequested = false;
   let adminMessageSource = null;
   let adminChannelToken = "";
+  const accessPreferenceKey = "gia-lai-7-phien.access.v1";
 
   configureAdminLinks();
 
@@ -95,7 +96,44 @@
     const separator = config.adminUrl.includes("?") ? "&" : "?";
     controlAuthLink.href = `${config.adminUrl}${separator}admin=1`;
     adminButton.hidden = false;
+    const preference = readAccessPreference();
+    if (preference?.email) adminEntryEmail.value = preference.email;
+    if (preference?.mode === "admin") {
+      enableAdminView();
+      return;
+    }
+    if (preference?.mode === "public") return;
     adminEntryDialog.showModal();
+  }
+
+  function readAccessPreference() {
+    try {
+      const preference = JSON.parse(localStorage.getItem(accessPreferenceKey) || "null");
+      if (!preference || preference.version !== 1 || preference.adminUrl !== config.adminUrl ||
+          !["admin", "public"].includes(preference.mode)) return null;
+      const email = typeof preference.email === "string" ? preference.email.trim().toLowerCase() : "";
+      if (preference.mode === "admin" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+      return {mode: preference.mode, email};
+    } catch (_) { return null; }
+  }
+
+  function saveAccessPreference(mode) {
+    // Store only the UI choice, never an authentication token or Google session.
+    try {
+      localStorage.setItem(accessPreferenceKey, JSON.stringify({version: 1, mode,
+        email: adminEntryEmail.value.trim().toLowerCase(), adminUrl: config.adminUrl}));
+    } catch (_) { /* Restricted storage must not prevent access to the dashboard. */ }
+  }
+
+  function enableAdminView() {
+    // Restoring the UI does not grant permission: Apps Script still verifies Google.
+    adminRequested = true;
+    adminMessageSource = null;
+    controlFrame.dataset.session = "";
+    sessionControl.hidden = false;
+    controlPanel.hidden = false;
+    controlFrame.hidden = false;
+    controlFab.setAttribute("aria-expanded", "true");
   }
 
   function getSessionFromUrl() {
@@ -1094,18 +1132,15 @@
     if (!adminEntryEmail.reportValidity()) return;
     // The typed email is a UI hint only. The private Apps Script verifies the
     // signed-in Google account against its server-side allowlist.
-    adminRequested = true;
-    adminMessageSource = null;
-    controlFrame.dataset.session = "";
-    sessionControl.hidden = false;
-    controlPanel.hidden = false;
-    controlFrame.hidden = false;
-    controlFab.setAttribute("aria-expanded", "true");
+    adminEntryEmail.value = adminEntryEmail.value.trim().toLowerCase();
+    saveAccessPreference("admin");
+    enableAdminView();
     adminEntryDialog.close();
     const session = payload?.sessions?.find(item => Number(item.id) === activeSession);
     if (session) updateQuickControl(session);
   });
   document.getElementById("admin-entry-public").addEventListener("click", () => {
+    saveAccessPreference("public");
     adminRequested = false;
     adminMessageSource = null;
     adminChannelToken = "";
