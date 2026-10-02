@@ -16,6 +16,10 @@
   const qrDialog = document.getElementById("qr-dialog");
   const qrDialogImage = document.getElementById("qr-dialog-image");
   const qrDialogTitle = document.getElementById("qr-dialog-title");
+  const presentationDialog = document.getElementById("presentation-dialog");
+  const presentationTitle = document.getElementById("presentation-dialog-title");
+  const presentationKicker = document.getElementById("presentation-dialog-kicker");
+  const presentationContent = document.getElementById("presentation-dialog-content");
   const sessionControl = document.getElementById("session-control");
   const controlFab = document.getElementById("control-fab");
   const controlPanel = document.getElementById("control-panel");
@@ -24,6 +28,9 @@
   const demoControl = document.getElementById("demo-control");
   const controlSessionLabel = document.getElementById("control-session-label");
   const globalTimerBanner = document.getElementById("global-timer-banner");
+  const floatingMetrics = document.getElementById("floating-metrics");
+  const floatingResponseCount = document.getElementById("floating-response-count");
+  const floatingUnitCount = document.getElementById("floating-unit-count");
   const formatNumber = new Intl.NumberFormat("vi-VN");
   const urlParams = new URLSearchParams(location.search);
   const fakeMode = urlParams.get("demo") === "1";
@@ -279,6 +286,24 @@
     updateCountdowns();
     updateQuickControl(session);
     bindSessionControls(session);
+    updateFloatingMetrics(session);
+  }
+
+  function updateFloatingMetrics(session) {
+    const count = phaseOf(session) === "CLOSED"
+      ? session.totalResponses
+      : (session.currentResponses ?? session.totalResponses ?? 0);
+    floatingResponseCount.textContent = formatNumber.format(Number(count) || 0);
+    floatingUnitCount.textContent = formatUnitParticipation(session);
+    syncFloatingMetricsVisibility();
+  }
+
+  function syncFloatingMetricsVisibility() {
+    const original = dashboard.querySelector(".metrics");
+    if (!original) { floatingMetrics.hidden = true; return; }
+    const stickyBottom = Math.max(nav.getBoundingClientRect().bottom, globalTimerBanner.hidden ? 0 : globalTimerBanner.getBoundingClientRect().bottom);
+    floatingMetrics.style.top = `${Math.max(8, stickyBottom + 8)}px`;
+    floatingMetrics.hidden = original.getBoundingClientRect().bottom >= stickyBottom + 8;
   }
 
   function updateQuickControl(session) {
@@ -288,6 +313,7 @@
     }
     if (!config.adminUrl || !adminRequested) return;
     controlSessionLabel.textContent = `Phiên ${session.id}`;
+    controlFab.textContent = `Mở điều khiển Phiên ${session.id}`;
     const separator = config.adminUrl.includes("?") ? "&" : "?";
     if (controlFrame.dataset.session !== String(session.id)) adminChannelToken = crypto.randomUUID();
     const compactUrl = `${config.adminUrl}${separator}admin=1&view=compact&session=${session.id}&email=${encodeURIComponent(adminEntryEmail.value.trim().toLowerCase())}&channelToken=${encodeURIComponent(adminChannelToken)}`;
@@ -299,6 +325,8 @@
   }
 
   function renderDemoQuickControl(session) {
+    controlSessionLabel.textContent = `Phiên ${session.id}`;
+    controlFab.textContent = `Mở điều khiển Phiên ${session.id}`;
     applyDemoSessionState(session);
     const phase = phaseOf(session);
     const closed = phase === "CLOSED";
@@ -511,11 +539,10 @@
       return renderTopParticipantsLeaderboard(session, topParticipants);
     }
     if (session.aiReviewPending) {
-      return `<section class="ai-review-pending panel"><p class="panel-kicker">KẾT QUẢ ĐANG ĐƯỢC CHẤM</p><h3>Chưa công bố vinh danh</h3><p>Gemini đang chấm bài trong Sheet. Khi hoàn tất và cập nhật bảng <strong>_PUBLIC_TOP</strong>, tải lại dashboard để công bố Top nội dung.</p></section>`;
+      return `<section class="ai-review-pending panel"><p class="panel-kicker">${session.kind === "true_false" ? "ĐÚNG / SAI VÀ GIẢI THÍCH" : "BÀI TỰ LUẬN"}</p><h3>Chưa công bố vinh danh</h3><p>${session.kind === "true_false" ? "Đang chờ chấm các lời giải thích theo căn cứ giáo viên." : "Đang chờ chấm các ý theo đáp án tham chiếu."} Bảng xếp hạng chỉ xuất hiện khi các bài trong phiên đã được chấm xong.</p></section>`;
     }
     const leaders = session.leaderboard || [];
     if (!leaders.length) return "";
-    const label = leaders.length === 1 ? "Top 1" : `Top ${leaders.length}`;
     return renderTopParticipantsLeaderboard(session, leaders);
   }
   function _legacyLeaderboardNote() {
@@ -525,6 +552,7 @@
   function renderTopParticipantsLeaderboard(session, participants) {
     const label = participants.length === 1 ? "Top 1" : `Top ${participants.length}`;
     const isQuiz = session.kind === "quiz" || session.kind === "true_false";
+    const methodNote = session.kind === "true_false" ? "Xếp theo số lựa chọn đúng, rồi số giải thích đạt, cuối cùng là thời gian" : isQuiz ? "Xếp theo số câu đúng, rồi thời gian hoàn thành" : session.kind === "ordering" ? "Xếp theo số bước đúng vị trí, rồi thời gian hoàn thành" : "Xếp theo số ý đúng, rồi thời gian hoàn thành";
     const featured = participants.slice(0, 3);
     const remaining = participants.slice(3);
 
@@ -533,22 +561,26 @@
       const rankClass = rank === 1 ? "rank-1" : rank === 2 ? "rank-2" : rank === 3 ? "rank-3" : `rank-${rank}`;
       const scoreBadge = person.scoreText || person.scoreChoice || person.result || "Đạt";
       const positionText = person.position ? escapeHtml(person.position) : "";
+      const hasDetails = !!(person.questionDetails?.length || person.matchedItems?.length || person.essay);
+      const cardTag = hasDetails ? "button" : "div";
+      const cardAction = hasDetails ? ` type="button" data-open-participant="${actualIndex}"` : "";
+      const detailHint = hasDetails ? `<span class="view-detail-hint">Xem chi tiết <b>→</b></span>` : "";
       
       if (!featuredCard) {
         return `
-          <button type="button" class="top-participant-card ranking-card ${rankClass}" data-open-participant="${actualIndex}">
+          <${cardTag}${cardAction} class="top-participant-card ranking-card ${rankClass}">
             <span class="rank-badge">#${rank}</span>
             <span class="ranking-identity">
               <strong class="participant-name">${escapeHtml(person.name || "Chưa có họ tên")}</strong>
               ${positionText ? `<small class="participant-position">${positionText}</small>` : ""}
             </span>
             <strong class="ranking-unit">${escapeHtml(person.unit || "Chưa xác định đơn vị")}</strong>
-            <small class="participant-submitted"><b>${escapeHtml(formatSubmittedTime(person.submittedAt || person.completedAt))}</b></small>
-            <span class="ranking-actions"><span class="score-pill">${escapeHtml(scoreBadge)}</span><span class="view-detail-hint">Xem chi tiết <b>→</b></span></span>
-          </button>`;
+            <small class="participant-submitted"><b>${escapeHtml(formatRankTime(person))}</b></small>
+            <span class="ranking-actions"><span class="score-pill">${escapeHtml(scoreBadge)}</span>${detailHint}</span>
+          </${cardTag}>`;
       }
       return `
-        <button type="button" class="top-participant-card ${featuredCard ? "podium-card" : "ranking-card"} ${rankClass}" data-open-participant="${actualIndex}">
+        <${cardTag}${cardAction} class="top-participant-card ${featuredCard ? "podium-card" : "ranking-card"} ${rankClass}">
           <span class="rank-badge">#${rank}</span>
           <span class="participant-info">
             <strong class="participant-name">${escapeHtml(person.name || "Chưa có họ tên")}</strong>
@@ -559,10 +591,10 @@
           </span>
           <span class="participant-card-footer">
             <span class="score-pill">${escapeHtml(scoreBadge)}</span>
-            <small class="participant-submitted"><b>${escapeHtml(formatSubmittedTime(person.submittedAt || person.completedAt))}</b></small>
-            <span class="view-detail-hint">Xem chi tiết <b>→</b></span>
+            <small class="participant-submitted"><b>${escapeHtml(formatRankTime(person))}</b></small>
+            ${detailHint}
           </span>
-        </button>`;
+        </${cardTag}>`;
     };
 
     return `
@@ -572,7 +604,7 @@
             <p class="panel-kicker">VINH DANH TOP NỘI DUNG TỐT NHẤT</p>
             <h3>${label} bài làm xuất sắc nhất</h3>
           </div>
-          <span class="leaderboard-ai-note">${isQuiz ? "Tự động chấm theo đáp án chuẩn · Click từng học viên để xem chi tiết đáp án" : "Kết quả có sự hỗ trợ của AI · Click từng học viên để xem chi tiết đáp án"}</span>
+          <span class="leaderboard-ai-note">${methodNote}</span>
         </div>
         <div class="top-podium" aria-label="Ba học viên đứng đầu">${featured.map((person, index) => personCard(person, index, true)).join("")}</div>
         ${remaining.length ? `<ol class="top-participants-list" start="4">${remaining.map((person, index) => `<li>${personCard(person, index + 3, false)}</li>`).join("")}</ol>` : ""}
@@ -592,6 +624,13 @@
     }
     const match = text.match(/(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?/);
     return match ? `Nộp lúc ${match[0]}` : "Chưa có giờ nộp";
+  }
+  function formatRankTime(person) {
+    if (Number.isFinite(Number(person.durationSeconds))) {
+      const seconds = Math.max(0, Math.floor(Number(person.durationSeconds)));
+      return `Hoàn thành sau ${Math.floor(seconds / 60)} phút ${String(seconds % 60).padStart(2, "0")} giây`;
+    }
+    return formatSubmittedTime(person.submittedAt || person.completedAt);
   }
 
   function renderLiveQuiz(session) {
@@ -644,20 +683,12 @@
   function renderOrderingDashboard(session) {
     const ordering = session.ordering || {};
     const positions = ordering.positionAccuracy || [];
-    const correctSteps = ordering.correctSteps || String(ordering.correctSequence || "").split(",").filter(Boolean).map((step, index) => ({ position: index + 1, step: step.trim(), text: session.prompt?.items?.[Number(step) - 1] || "" }));
+    const correctSteps = getCorrectSteps(session);
     return `<section class="content-grid ordering-dashboard">
       ${renderPromptCard(session, true)}
       <article class="panel full reference-panel ordering-reference-panel">
-        ${panelHeading("Trình tự đúng quy trình (13 bước)", "Các bước theo thứ tự thực hiện chuẩn từ Bước 1 đến Bước 13")}
-        <div class="ordering-ref-list correct-step-list">
-          ${correctSteps.map(item => `
-            <div class="ordering-ref-row">
-              <span class="ordering-ref-pos">Vị trí ${String(item.position).padStart(2, "0")}</span>
-              <span class="ordering-ref-step">Bước ${escapeHtml(item.step)}</span>
-              <strong class="ordering-ref-text">${escapeHtml(item.text || "Chưa có nội dung bước")}</strong>
-            </div>
-          `).join("")}
-        </div>
+        <div class="panel-heading panel-heading-actions"><div><p class="panel-kicker">TRỰC QUAN</p><h3>Trình tự đúng quy trình (13 bước)</h3></div><button class="presentation-trigger" type="button" data-present="answer">Chiếu trình tự đúng ↗</button></div>
+        ${renderCorrectSteps(correctSteps)}
       </article>
       <article class="panel full">
         ${panelHeading("Tỷ lệ đặt đúng vị trí của từng bước", "Nhận diện bước thường bị đặt sai")}
@@ -670,6 +701,15 @@
         ${renderWrongSequences(ordering.commonSequences || [])}
       </article>
     </section>`;
+  }
+
+  function getCorrectSteps(session) {
+    const ordering = session.ordering || {};
+    return ordering.correctSteps || String(ordering.correctSequence || "").split(",").filter(Boolean).map((step, index) => ({ position: index + 1, step: step.trim(), text: session.prompt?.items?.[Number(step) - 1] || "" }));
+  }
+
+  function renderCorrectSteps(steps) {
+    return `<div class="ordering-ref-list correct-step-list">${steps.map(item => `<div class="ordering-ref-row"><span class="ordering-ref-pos">Vị trí ${String(item.position).padStart(2, "0")}</span><span class="ordering-ref-step">Bước ${escapeHtml(item.step)}</span><strong class="ordering-ref-text">${escapeHtml(item.text || "Chưa có nội dung bước")}</strong></div>`).join("")}</div>`;
   }
 
   function renderOrderingSample(value, index) {
@@ -749,8 +789,42 @@
   function renderPromptCard(session, compact = false) {
     const prompt = session.prompt;
     if (!prompt) return "";
-    const body = `${(prompt.paragraphs || []).map(text => `<p>${escapeHtml(text)}</p>`).join("")}${(prompt.items || []).length ? `<div class="prompt-items-list">${prompt.items.map((item, index) => `<div class="prompt-item-row"><span class="prompt-item-badge">${index + 1}</span><span class="prompt-item-text">${escapeHtml(item)}</span></div>`).join("")}</div>` : ""}${prompt.question ? `<div class="prompt-question"><span>Câu hỏi</span><strong>${escapeHtml(prompt.question)}</strong></div>` : ""}${prompt.instruction ? `<p class="prompt-instruction"><strong>Cách nhập:</strong> ${escapeHtml(prompt.instruction)}</p>` : ""}`;
-    return `<details class="panel full prompt-card ${compact ? "prompt-card-compact" : ""}" data-ui-state="session-${session.id}-prompt" ${compact ? "" : "open"}><summary><span class="prompt-label">${escapeHtml(prompt.label || "ĐỀ BÀI")}</span><strong>${escapeHtml(prompt.title || "")}</strong><span class="prompt-toggle"><span class="toggle-open">Thu gọn đề bài</span><span class="toggle-closed">Xem đầy đủ đề bài</span><i aria-hidden="true"></i></span></summary><div class="prompt-body">${body}</div></details>`;
+    const isCase = session.kind === "open" && (Number(session.id) === 2 || Number(session.id) === 7);
+    const title = isCase ? session.description : prompt.title;
+    const presentButton = Number(session.id) === 1 ? '<button class="presentation-trigger prompt-present" type="button" data-present="prompt">Chiếu toàn đề ↗</button>' : "";
+    return `<details class="panel full prompt-card ${compact ? "prompt-card-compact" : ""} ${isCase ? "prompt-card-case" : ""}" data-ui-state="session-${session.id}-prompt" ${compact ? "" : "open"}><summary><span class="prompt-label">${escapeHtml(prompt.label || "ĐỀ BÀI")}</span><strong>${escapeHtml(title || "")}</strong>${presentButton}<span class="prompt-toggle"><span class="toggle-open">Thu gọn đề bài</span><span class="toggle-closed">Xem đầy đủ đề bài</span><i aria-hidden="true"></i></span></summary><div class="prompt-body">${renderPromptBody(session)}</div></details>`;
+  }
+
+  function renderPromptBody(session) {
+    const prompt = session.prompt || {};
+    const isCase = session.kind === "open" && (Number(session.id) === 2 || Number(session.id) === 7);
+    const caseContent = isCase ? renderCaseText(prompt.title) : "";
+    return `${caseContent}${(prompt.paragraphs || []).map(text => `<p>${escapeHtml(text)}</p>`).join("")}${(prompt.items || []).length ? `<div class="prompt-items-list">${prompt.items.map((item, index) => `<div class="prompt-item-row"><span class="prompt-item-badge">${index + 1}</span><span class="prompt-item-text">${escapeHtml(item)}</span></div>`).join("")}</div>` : ""}${prompt.question ? `<div class="prompt-question"><span>Câu hỏi</span><strong>${escapeHtml(prompt.question)}</strong></div>` : ""}${prompt.instruction ? `<p class="prompt-instruction"><strong>Cách nhập:</strong> ${escapeHtml(prompt.instruction)}</p>` : ""}`;
+  }
+
+  function renderCaseText(value) {
+    const lines = String(value || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    if (!lines.length) return "";
+    return `<div class="case-text"><p class="case-intro">${escapeHtml(lines[0])}</p>${lines.slice(1).map(line => {
+      const numbered = line.match(/^(\d+)\.\s*(.*)$/);
+      const arrow = line.match(/^->\s*(.*)$/);
+      const bullet = line.match(/^\+\s*(.*)$/);
+      const marker = numbered ? numbered[1] : arrow ? "→" : bullet ? "•" : "";
+      const text = numbered ? numbered[2] : arrow ? arrow[1] : bullet ? bullet[1] : line;
+      return `<div class="case-line ${marker ? "case-line-marked" : ""}">${marker ? `<span class="case-marker">${escapeHtml(marker)}</span>` : ""}<p>${escapeHtml(text)}</p></div>`;
+    }).join("")}</div>`;
+  }
+
+  function openPresentation(session, type) {
+    if (Number(session.id) !== 1) return;
+    const answer = type === "answer";
+    presentationKicker.textContent = `PHIÊN ${session.id} · TRÌNH CHIẾU`;
+    presentationTitle.textContent = answer ? "Trình tự đúng quy trình" : "Đề bài sắp xếp";
+    presentationContent.innerHTML = answer
+      ? renderCorrectSteps(getCorrectSteps(session))
+      : `<p class="presentation-subtitle">${escapeHtml(session.prompt?.title || "")}</p>${renderPromptBody(session)}`;
+    presentationContent.classList.toggle("presentation-answer", answer);
+    presentationDialog.showModal();
   }
 
   function renderUnitBreakdown(session) {
@@ -976,6 +1050,11 @@
   }
 
   function bindSessionControls(session) {
+    dashboard.querySelectorAll("[data-present]").forEach(button => button.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      openPresentation(session, button.dataset.present);
+    }));
     dashboard.querySelectorAll("[data-open-participant]").forEach(button => button.addEventListener("click", () => {
       const index = Number(button.dataset.openParticipant);
       const items = (session.topParticipants && session.topParticipants.length > 0)
@@ -1020,6 +1099,7 @@
     sessionControl.hidden = false;
     controlPanel.hidden = false;
     controlFrame.hidden = false;
+    controlFab.setAttribute("aria-expanded", "true");
     adminEntryDialog.close();
     const session = payload?.sessions?.find(item => Number(item.id) === activeSession);
     if (session) updateQuickControl(session);
@@ -1037,6 +1117,10 @@
   document.getElementById("refresh-button").addEventListener("click", () => loadData(true));
   document.getElementById("fullscreen-button").addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); });
   document.getElementById("qr-dialog-close").addEventListener("click", () => qrDialog.close());
+  document.getElementById("presentation-dialog-close").addEventListener("click", () => presentationDialog.close());
+  presentationDialog.addEventListener("click", event => {
+    if (event.target === presentationDialog) presentationDialog.close();
+  });
   qrDialog.addEventListener("click", event => {
     const bounds = qrDialog.getBoundingClientRect();
     const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
@@ -1046,28 +1130,30 @@
     const opening = controlPanel.hidden;
     controlPanel.hidden = !opening;
     controlFab.setAttribute("aria-expanded", String(opening));
-    controlFab.textContent = opening ? "×" : "+";
+    controlFab.textContent = `Mở điều khiển Phiên ${activeSession}`;
     if (opening) {
       if (fakeMode) {
         const session = payload?.sessions?.find(item => Number(item.id) === activeSession);
         if (session) renderDemoQuickControl(session);
       } else {
-        const separator = config.adminUrl.includes("?") ? "&" : "?";
-        controlFrame.dataset.session = String(activeSession);
-        controlFrame.src = `${config.adminUrl}${separator}admin=1&view=compact&session=${activeSession}&_=${Date.now()}`;
+        controlFrame.dataset.session = "";
+        const session = payload?.sessions?.find(item => Number(item.id) === activeSession);
+        if (session) updateQuickControl(session);
       }
     }
   });
   document.getElementById("control-panel-close").addEventListener("click", () => {
     controlPanel.hidden = true;
     controlFab.setAttribute("aria-expanded", "false");
-    controlFab.textContent = "+";
+    controlFab.textContent = `Mở điều khiển Phiên ${activeSession}`;
   });
+  window.addEventListener("scroll", syncFloatingMetricsVisibility, { passive: true });
+  window.addEventListener("resize", syncFloatingMetricsVisibility);
   function closeControlPanel() {
     if (adminRequested) return;
     controlPanel.hidden = true;
     controlFab.setAttribute("aria-expanded", "false");
-    controlFab.textContent = "+";
+    controlFab.textContent = `Mở điều khiển Phiên ${activeSession}`;
   }
   window.addEventListener("message", event => {
     const trustedAdminOrigin = /^https:\/\/(?:[a-z0-9-]+\.)*googleusercontent\.com$/i.test(event.origin)

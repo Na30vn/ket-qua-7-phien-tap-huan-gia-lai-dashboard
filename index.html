@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#123c69">
   <title>Dashboard kết quả 07 phiên tập huấn Gia Lai</title>
-  <link rel="stylesheet" href="styles.css?v=gia-lai-20261001-3">
+  <link rel="stylesheet" href="styles.css?v=gia-lai-20261002-4">
 </head>
 <body>
   <header class="hero">
@@ -44,11 +44,11 @@
   </dialog>
 
   <section id="session-control" class="session-control session-control-inline" hidden>
-    <button id="control-fab" class="control-fab" type="button" aria-expanded="true" aria-controls="control-panel" aria-label="Mở điều khiển phiên" hidden>+</button>
+    <button id="control-fab" class="control-fab" type="button" aria-expanded="true" aria-controls="control-panel" aria-label="Mở điều khiển phiên">Mở điều khiển Phiên 1</button>
     <div id="control-panel" class="control-panel">
       <div class="control-panel-head">
         <div><span>ĐIỀU KHIỂN NGAY TRÊN PHIÊN</span><strong id="control-session-label">Phiên 1</strong></div>
-        <button id="control-panel-close" type="button" aria-label="Đóng điều khiển" hidden>×</button>
+        <button id="control-panel-close" type="button" aria-label="Thu gọn điều khiển">×</button>
       </div>
       <p class="control-auth-note">Chỉ tài khoản Google được cấp quyền mới sử dụng được các nút bên dưới. Nếu Google yêu cầu cấp quyền lần đầu, dùng liên kết xác thực rồi quay lại dashboard.</p>
       <a id="control-auth-link" class="control-auth-link" target="_blank" rel="noopener">Xác thực Google lần đầu</a>
@@ -56,6 +56,11 @@
       <div id="demo-control" class="demo-control" hidden></div>
     </div>
   </section>
+
+  <aside id="floating-metrics" class="floating-metrics" aria-label="Chỉ số phiên đang xem" hidden>
+    <div><span>Bài đã nhận</span><strong id="floating-response-count">0</strong></div>
+    <div><span>Đơn vị tham gia</span><strong id="floating-unit-count">0</strong></div>
+  </aside>
 
   <main id="dashboard" class="dashboard" aria-live="polite">
     <section class="loading-panel">
@@ -72,6 +77,14 @@
     <p class="qr-dialog-note">Quét mã để mở biểu mẫu của phiên này</p>
   </dialog>
 
+  <dialog id="presentation-dialog" class="presentation-dialog" aria-labelledby="presentation-dialog-title">
+    <header class="presentation-head">
+      <div><span id="presentation-dialog-kicker">PHIÊN 1 · TRÌNH CHIẾU</span><h2 id="presentation-dialog-title">Đề bài</h2></div>
+      <button id="presentation-dialog-close" class="presentation-close" type="button" aria-label="Đóng trình chiếu">Đóng ×</button>
+    </header>
+    <div id="presentation-dialog-content" class="presentation-content"></div>
+  </dialog>
+
   <dialog id="top-participant-dialog" class="top-participant-dialog" aria-labelledby="participant-dialog-title">
     <button id="participant-dialog-close" class="dialog-close" type="button" aria-label="Đóng chi tiết">×</button>
     <div id="participant-dialog-content"></div>
@@ -82,6 +95,6 @@
   </footer>
 
   <script src="config.js"></script>
-  <script src="app.js?v=gia-lai-20261001-3"></script>
+  <script src="app.js?v=gia-lai-20261002-4"></script>
 </body>
 </html>
