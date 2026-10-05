@@ -207,6 +207,7 @@
 
   async function loadData(forceRefresh = false) {
     if (isLoading) return;
+    const requestStartedAt = Date.now();
     isLoading = true;
     if (!payload) setStatus("loading", "Đang tải dữ liệu…");
     try {
@@ -224,6 +225,9 @@
         payload = await fetchJsonp(requestUrl);
       }
       if (!payload || !Array.isArray(payload.sessions)) throw new Error("DATA_INVALID");
+      controlSessionStates.forEach((state, id) => {
+        if (!pendingSessionActions.has(id) && requestStartedAt >= (state._receivedAt || 0)) controlSessionStates.delete(id);
+      });
       lastLivePayload = payload;
       usingFallbackData = false;
       setStatus(fakeMode ? "demo" : "live", fakeMode ? "Dữ liệu giả lập" : "Dữ liệu trực tiếp");
@@ -301,6 +305,12 @@
     subtitle.textContent = session.typeLabel;
     updatedAt.textContent = payload.updatedAt ? `Cập nhật: ${new Date(payload.updatedAt).toLocaleString("vi-VN")}` : "";
     const phase = phaseOf(session);
+    if (phase !== "CLOSED") {
+      closedLivePreview = false;
+      if (leaderboardDialog.open) leaderboardDialog.close();
+      if (participantDialog?.open) participantDialog.close();
+      if (presentationDialog.open && presentationContent.classList.contains("presentation-answer")) presentationDialog.close();
+    }
     const pendingAction = pendingSessionActions.get(Number(session.id));
     const closing = pendingAction === "close";
     renderGlobalTimer(session, closing ? "PROCESSING" : phase);
@@ -1217,6 +1227,7 @@
     }
     if (event.source !== adminMessageSource) return;
     if (event.data?.type === "dashboard-session-pending") {
+      if (["timer", "close", "reset", "reopen"].includes(event.data.action)) pendingSessionActions.set(Number(event.data.sessionId), event.data.action);
       closeControlPanel();
       if (event.data.action === "close") {
         pendingSessionActions.set(Number(event.data.sessionId), "close");
@@ -1225,6 +1236,7 @@
       } else if (event.data.action === "timer") {
         controlSessionStates.set(Number(event.data.sessionId), {
           phase: "TIMED",
+          _receivedAt: Date.now(),
           timerStartedAt: event.data.timerStartedAt || null,
           timerEndsAt: event.data.timerEndsAt || null
         });
@@ -1252,6 +1264,7 @@
     }
     if (event.data?.type === "dashboard-session-failed") {
       pendingSessionActions.delete(Number(event.data.sessionId));
+      controlSessionStates.delete(Number(event.data.sessionId));
       loadData(true);
       return;
     }
@@ -1259,6 +1272,7 @@
     pendingSessionActions.delete(Number(event.data.sessionId));
     closeControlPanel();
     controlSessionStates.set(Number(event.data.sessionId), {
+      _receivedAt: Date.now(),
       phase: event.data.phase,
       timerStartedAt: event.data.timerStartedAt || null,
       timerEndsAt: event.data.timerEndsAt || null,
