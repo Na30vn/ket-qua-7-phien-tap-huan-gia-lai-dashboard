@@ -20,6 +20,9 @@
   const presentationTitle = document.getElementById("presentation-dialog-title");
   const presentationKicker = document.getElementById("presentation-dialog-kicker");
   const presentationContent = document.getElementById("presentation-dialog-content");
+  const leaderboardDialog = document.getElementById("leaderboard-dialog");
+  const leaderboardDialogTitle = document.getElementById("leaderboard-dialog-title");
+  const leaderboardDialogContent = document.getElementById("leaderboard-dialog-content");
   const sessionControl = document.getElementById("session-control");
   const controlFab = document.getElementById("control-fab");
   const controlPanel = document.getElementById("control-panel");
@@ -587,7 +590,7 @@
     return "Tối đa 10 người · xếp theo điểm, ưu tiên nộp sớm";
   }
 
-  function renderTopParticipantsLeaderboard(session, participants) {
+  function renderTopParticipantsLeaderboard(session, participants, presentation = false) {
     const label = participants.length === 1 ? "Top 1" : `Top ${participants.length}`;
     const isQuiz = session.kind === "quiz" || session.kind === "true_false";
     const methodNote = session.kind === "true_false" ? "Xếp theo số lựa chọn đúng, rồi số giải thích đạt, cuối cùng là thời gian" : isQuiz ? "Xếp theo số câu đúng, rồi thời gian hoàn thành" : session.kind === "ordering" ? "Xếp theo số bước đúng vị trí, rồi thời gian hoàn thành" : "Xếp theo số ý đúng, rồi thời gian hoàn thành";
@@ -611,9 +614,9 @@
             <span class="ranking-identity">
               <strong class="participant-name">${escapeHtml(person.name || "Chưa có họ tên")}</strong>
               ${positionText ? `<small class="participant-position">${positionText}</small>` : ""}
+              ${presentation ? `<span class="ranking-meta"><strong>${escapeHtml(person.unit || "Chưa xác định đơn vị")}</strong><small>${escapeHtml(formatRankTime(person))}</small></span>` : ""}
             </span>
-            <strong class="ranking-unit">${escapeHtml(person.unit || "Chưa xác định đơn vị")}</strong>
-            <small class="participant-submitted"><b>${escapeHtml(formatRankTime(person))}</b></small>
+            ${presentation ? "" : `<strong class="ranking-unit">${escapeHtml(person.unit || "Chưa xác định đơn vị")}</strong><small class="participant-submitted"><b>${escapeHtml(formatRankTime(person))}</b></small>`}
             <span class="ranking-actions"><span class="score-pill">${escapeHtml(scoreBadge)}</span>${detailHint}</span>
           </${cardTag}>`;
       }
@@ -643,12 +646,22 @@
             <p class="panel-kicker">VINH DANH TOP NỘI DUNG TỐT NHẤT</p>
             <h3>${label} bài làm dẫn đầu</h3>
           </div>
-          <span class="leaderboard-ai-note">${methodNote}</span>
+          <div class="leaderboard-heading-actions"><span class="leaderboard-ai-note">${methodNote}</span>${presentation ? "" : '<button type="button" class="presentation-trigger" data-open-leaderboard>Mở bảng vinh danh ↗</button>'}</div>
         </div>
         <div class="top-podium" data-count="${featured.length}" aria-label="Ba học viên đứng đầu">${featured.map((person, index) => personCard(person, index, true)).join("")}</div>
         ${remaining.length ? `<ol class="top-participants-list" start="4">${remaining.map((person, index) => `<li>${personCard(person, index + 3, false)}</li>`).join("")}</ol>` : ""}
       </section>
     `;
+  }
+
+  function openLeaderboardPresentation(session) {
+    const participants = session.topParticipants?.length ? session.topParticipants : session.leaderboard || [];
+    if (phaseOf(session) !== "CLOSED" || session.aiReviewPending || !participants.length) return;
+    leaderboardDialogTitle.textContent = `Bảng vinh danh · Phiên ${session.id}`;
+    leaderboardDialogContent.innerHTML = `<p class="leaderboard-presentation-note">${escapeHtml(session.description || session.name)} · Chọn học viên để xem bài làm</p>${renderTopParticipantsLeaderboard(session, participants.slice(0, 10), true)}`;
+    bindParticipantControls(leaderboardDialogContent, session);
+    leaderboardDialog.showModal();
+    leaderboardDialogContent.scrollTop = 0;
   }
 
   function formatSubmittedTime(value) {
@@ -1089,19 +1102,13 @@
   }
 
   function bindSessionControls(session) {
+    dashboard.querySelectorAll("[data-open-leaderboard]").forEach(button => button.addEventListener("click", () => openLeaderboardPresentation(session)));
     dashboard.querySelectorAll("[data-present]").forEach(button => button.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
       openPresentation(session, button.dataset.present);
     }));
-    dashboard.querySelectorAll("[data-open-participant]").forEach(button => button.addEventListener("click", () => {
-      const index = Number(button.dataset.openParticipant);
-      const items = (session.topParticipants && session.topParticipants.length > 0)
-        ? session.topParticipants
-        : (session.leaderboard || []);
-      const person = items[index];
-      if (person) openParticipantModal(person, session);
-    }));
+    bindParticipantControls(dashboard, session);
     dashboard.querySelectorAll("[data-open-qr]").forEach(button => button.addEventListener("click", () => {
       qrDialogTitle.textContent = `Phiên ${session.id} – ${session.description || session.name}`;
       qrDialogImage.src = `assets/qr/session-${session.id}.png`;
@@ -1120,6 +1127,13 @@
     if (search) search.addEventListener("input", event => { responseSearch = event.target.value; renderOpenResponseList(); });
   }
   function renderOpenResponseList() { const input = document.getElementById("response-search"); const start = input?.selectionStart || responseSearch.length; render(); const next = document.getElementById("response-search"); if (next) { next.focus(); next.setSelectionRange(start, start); } }
+  function bindParticipantControls(container, session) {
+    const items = session.topParticipants?.length ? session.topParticipants : session.leaderboard || [];
+    container.querySelectorAll("[data-open-participant]").forEach(button => button.addEventListener("click", () => {
+      const person = items[Number(button.dataset.openParticipant)];
+      if (person) openParticipantModal(person, session);
+    }));
+  }
   function normalizeText(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("vi").trim(); }
   function formatStepSequence(value) { return String(value || "").split(",").map(step => step.trim()).filter(Boolean).map(step => `Bước ${step}`).join(" → "); }
   function score(value) { return Number.isFinite(Number(value)) ? Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : "—"; }
@@ -1154,6 +1168,7 @@
   document.getElementById("fullscreen-button").addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); });
   document.getElementById("qr-dialog-close").addEventListener("click", () => qrDialog.close());
   document.getElementById("presentation-dialog-close").addEventListener("click", () => presentationDialog.close());
+  document.getElementById("leaderboard-dialog-close").addEventListener("click", () => leaderboardDialog.close());
   presentationDialog.addEventListener("click", event => {
     if (event.target === presentationDialog) presentationDialog.close();
   });
