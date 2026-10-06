@@ -59,6 +59,14 @@
   let lastLivePayload = null;
   let countdownExpired = false;
   let isLoading = false;
+  let refreshQueued = false;
+  let forceRefreshQueued = false;
+  const jsonpCallbacks = Object.create(null);
+  const ignoreLateJsonp = () => {};
+  // A late script can safely call a removed request without leaking callbacks.
+  window.__giaLaiDashboardCallbacks = new Proxy(jsonpCallbacks, {
+    get: (callbacks, key) => callbacks[key] || ignoreLateJsonp
+  });
   let usingFallbackData = false;
   const detailStates = new Map();
   const scrollStates = new Map();
@@ -206,7 +214,11 @@
   }
 
   async function loadData(forceRefresh = false) {
-    if (isLoading) return;
+    if (isLoading) {
+      refreshQueued = true;
+      forceRefreshQueued ||= forceRefresh === true;
+      return;
+    }
     const requestStartedAt = Date.now();
     isLoading = true;
     if (!payload) setStatus("loading", "Đang tải dữ liệu…");
@@ -216,7 +228,10 @@
       const separator = dataUrl.includes("?") ? "&" : "?";
       const force = !fakeMode && forceRefresh === true ? "&refresh=1" : "";
       const requestUrl = `${dataUrl}${separator}_=${Date.now()}${force}`;
-      try {
+      if (!fakeMode && /^https:\/\/script\.google\.com\/macros\/s\//.test(dataUrl)) {
+        // Apps Script JSONP avoids a slow CORS fetch attempt before each poll.
+        payload = await fetchJsonp(requestUrl);
+      } else try {
         const response = await fetchWithTimeout(requestUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         payload = await response.json();
@@ -244,6 +259,12 @@
       }
     } finally {
       isLoading = false;
+      if (refreshQueued) {
+        const force = forceRefreshQueued;
+        refreshQueued = false;
+        forceRefreshQueued = false;
+        queueMicrotask(() => loadData(force));
+      }
     }
     applyPendingControlStates();
     render();
@@ -259,9 +280,10 @@
     }
   }
 
-  function fetchJsonp(url, timeoutMs = 12000) {
+  function fetchJsonp(url, timeoutMs = 25000) {
     return new Promise((resolve, reject) => {
-      const callback = `__giaLaiDashboard_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const requestKey = `r${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const callback = `__giaLaiDashboardCallbacks.${requestKey}`;
       const script = document.createElement("script");
       const separator = url.includes("?") ? "&" : "?";
       let done = false;
@@ -270,12 +292,12 @@
         done = true;
         clearTimeout(timerId);
         script.remove();
-        delete window[callback];
+        delete jsonpCallbacks[requestKey];
         if (error) reject(error);
         else resolve(data);
       };
       const timerId = setTimeout(() => finish(new Error("JSONP_TIMEOUT")), timeoutMs);
-      window[callback] = data => finish(null, data);
+      jsonpCallbacks[requestKey] = data => finish(null, data);
       script.onerror = () => finish(new Error("JSONP_FAILED"));
       script.src = `${url}${separator}callback=${encodeURIComponent(callback)}`;
       document.head.appendChild(script);
@@ -283,7 +305,7 @@
   }
 
   function applyPendingControlStates() {
-    if (!usingFallbackData || !payload?.sessions) return;
+    if (!payload?.sessions) return;
     controlSessionStates.forEach((state, id) => {
       const session = payload.sessions.find(item => Number(item.id) === Number(id));
       if (session) Object.assign(session, state);
@@ -1284,7 +1306,7 @@
       render();
       updateCountdowns();
     }
-    setTimeout(() => loadData(false), 700);
+    loadData(true);
   });
   loadData();
   if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden) loadData(false); }, Number(config.refreshSeconds) * 1000);
