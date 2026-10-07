@@ -817,7 +817,7 @@
       const trueIsCorrect = normalizeText(correctAnswer) === normalizeText("Đúng");
       const falseIsCorrect = normalizeText(correctAnswer) === normalizeText("Sai");
       return `<button type="button" class="tf-card ${index === selectedQuestion ? "active" : ""}" data-question="${index}"><span class="tf-card-heading"><b>Câu ${index + 1}</b>${correctAnswer ? `<em>Đáp án: ${escapeHtml(correctAnswer)}</em>` : ""}</span><div class="${trueIsCorrect ? "correct-choice" : ""}"><strong>${formatNumber.format(trueCount)}</strong><small>Đúng · ${score(trueCount / total * 100)}%</small></div><div class="${falseIsCorrect ? "correct-choice" : ""}"><strong>${formatNumber.format(falseCount)}</strong><small>Sai · ${score(falseCount / total * 100)}%</small></div></button>`;
-    }).join("")}</div></article>${question ? `<article class="panel full answer-explorer">${panelHeading("Chi tiết câu hỏi và phần giải thích", "Chọn câu để trao đổi tại lớp")}${questionSelector(questions)}<div class="question-focus"><span class="question-number">CÂU ${selectedQuestion + 1}</span><h3>${escapeHtml(question.title)}</h3></div>${live ? "" : `<div class="reference-inline"><strong>Đáp án và căn cứ tham chiếu:</strong> ${escapeHtml(question.referenceNote || question.correctAnswer || "Chưa có")}</div>`}<div class="choice-summary"><span><b>${formatNumber.format(optionCount(question, "Đúng"))}</b> chọn Đúng</span><span><b>${formatNumber.format(optionCount(question, "Sai"))}</b> chọn Sai</span></div>${renderExplanationList(session.id, selectedQuestion, question.explanations || [])}</article>` : ""}</section>`;
+    }).join("")}</div></article>${question ? `<article class="panel full answer-explorer">${panelHeading("Chi tiết câu hỏi và phần giải thích", "Một vài giải thích ngẫu nhiên, không phụ thuộc điểm AI")}${questionSelector(questions)}<div class="question-focus"><span class="question-number">CÂU ${selectedQuestion + 1}</span><h3>${escapeHtml(question.title)}</h3></div>${live ? "" : `<div class="reference-inline"><strong>Đáp án và căn cứ tham chiếu:</strong> ${escapeHtml(question.referenceNote || question.correctAnswer || "Chưa có")}</div>`}<div class="choice-summary"><span><b>${formatNumber.format(optionCount(question, "Đúng"))}</b> chọn Đúng</span><span><b>${formatNumber.format(optionCount(question, "Sai"))}</b> chọn Sai</span></div>${renderExplanationList(session.id, selectedQuestion, question.explanations || [])}</article>` : ""}</section>`;
   }
 
   function renderExplanationList(sessionId, questionIndex, explanations) {
@@ -844,8 +844,8 @@
     const responseBlock = filtered.length ? `
       <details class="responses-disclosure" data-ui-state="session-${session.id}-responses" open>
         <summary>
-          <span>${live ? "Các bài nộp đang nhận trực tiếp" : `Xem ${filtered.length} câu trả lời`}</span>
-          <small>${live ? "Tự động cập nhật các bài nộp mới nhất" : "Bấm để mở hoặc thu gọn danh sách"}</small>
+          <span>${`Xem ${filtered.length} bài làm mẫu`}</span>
+          <small>Bấm để mở hoặc thu gọn danh sách</small>
         </summary>
         <div class="response-list open-response-list">
           ${filtered.map((text, index) => `<article class="open-response-card"><header><span>Phản hồi #${index + 1}</span></header><p>${escapeHtml(text)}</p></article>`).join("")}
@@ -860,11 +860,11 @@
         <div class="panel-heading panel-heading-actions">
           <div>
             <p class="panel-kicker">${live ? "TRỰC TIẾP LÚC NHẬN BÀI" : "PHẢN HỒI HỌC VIÊN"}</p>
-            <h3>${live ? "Hệ thống đang nhận bài làm của học viên..." : `Danh sách câu trả lời (${filtered.length}/${responses.length})`}</h3>
+            <h3>Một số bài làm của học viên</h3>
           </div>
           ${live ? '<span class="live-indicator-badge">🟢 Đang tự động cập nhật phản hồi mới</span>' : `<label class="search-box"><span class="sr-only">Tìm trong câu trả lời</span><input id="response-search" type="search" placeholder="Tìm trong nội dung phản hồi…" value="${escapeHtml(responseSearch)}"></label>`}
         </div>
-        <p class="privacy-note">${live ? "Nội dung học viên gửi sẽ xuất hiện ngay lập tức bên dưới (hiển thị ẩn danh)." : "Danh sách được thu gọn mặc định để dễ theo dõi. Nội dung phản hồi hiển thị ẩn danh."}</p>
+        <p class="privacy-note">Tối đa 5 bài được chọn ngẫu nhiên từ các bài hợp lệ, không theo điểm và không cần chờ chấm AI. Mẫu được giữ ổn định giữa các lần cập nhật khi danh sách bài không đổi.</p>
         ${responseBlock}
       </article>
     </section>`;
