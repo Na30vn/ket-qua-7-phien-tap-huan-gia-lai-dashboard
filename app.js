@@ -52,6 +52,7 @@
 
   let payload = null;
   let courseData = null;
+  let attendanceData = null, attendanceLoading = false;
   let courseLoading = false;
   let activeSession = getSessionFromUrl();
   let selectedQuestion = 0;
@@ -150,6 +151,7 @@
   }
 
   function getSessionFromUrl() {
+    if (urlParams.get("view") === "attendance") return -1;
     if (urlParams.get("view") === "course") return 0;
     const value = Number(urlParams.get("phien"));
     return value >= 1 && value <= 7 ? value : 1;
@@ -319,6 +321,13 @@
     captureUiState();
     const sessions = payload?.sessions || [];
     renderNav(sessions);
+    if (activeSession === -1) {
+      sessionTitle.textContent="Điểm danh · Gia Lai";subtitle.textContent="Ngày 10/10 và 11/10/2026";
+      sessionControl.hidden=true;globalTimerBanner.hidden=true;floatingMetrics.hidden=true;
+      window.GiaLaiAttendance.render(dashboard,attendanceData,{loading:attendanceLoading});
+      if(!attendanceData&&!attendanceLoading)loadAttendance();return;
+    }
+    window.GiaLaiAttendance?.close();
     if (activeSession === 0) {
       sessionTitle.textContent = "Tổng kết khóa · Gia Lai";
       subtitle.textContent = "Vinh danh đơn vị tích cực và đạt thành tích cao";
@@ -555,7 +564,11 @@
     nav.innerHTML = sessions.map(session => {
       const phase = phaseOf(session);
       return `<button class="session-tab ${Number(session.id) === activeSession ? "active" : ""}" data-session="${session.id}" type="button" aria-label="Phiên ${session.id}"><span>${session.id}</span><i class="tab-phase ${phase.toLowerCase()}"></i></button>`;
-    }).join("") + `<button class="session-tab course-tab ${activeSession===0?"active":""}" data-course type="button">Tổng kết khóa</button>`;
+    }).join("") + `<button class="session-tab course-tab ${activeSession===0?"active":""}" data-course type="button">Tổng kết khóa</button><button class="session-tab course-tab ${activeSession===-1?"active":""}" data-attendance type="button">Điểm danh</button>`;
+    nav.querySelector('[data-attendance]').onclick=()=>{
+      activeSession=-1;const params=new URLSearchParams(location.search);params.set('view','attendance');params.delete('phien');
+      history.replaceState({},'',`${location.pathname}?${params.toString()}`);render();loadAttendance();scrollTo({top:0,behavior:'smooth'});
+    };
     nav.querySelector("[data-course]").addEventListener("click",()=>{
       activeSession=0;
       const params=new URLSearchParams(location.search);params.set("view","course");params.delete("phien");
@@ -1219,7 +1232,19 @@
     if (activeSession===0) render();
   });
   adminButton.addEventListener("click", () => adminEntryDialog.showModal());
-  document.getElementById("refresh-button").addEventListener("click", () => {if(activeSession!==0)loadData(true);});
+  document.getElementById("refresh-button").addEventListener("click", () => {if(activeSession>0)loadData(true);if(activeSession===-1)loadAttendance(true);});
+  async function loadAttendance(force=false) {
+    if(attendanceLoading||activeSession!==-1)return;
+    attendanceLoading=true;render();
+    try {
+      const separator=config.apiUrl.includes('?')?'&':'?';
+      const data=await fetchJsonp(`${config.apiUrl}${separator}attendance=1${force?'&refresh=1':''}&_=${Date.now()}`,30000);
+      if(!data||!Array.isArray(data.days)||!data.combined)throw Error('Sai cấu trúc điểm danh');
+      attendanceData=data;
+    }catch(error){if(attendanceData)attendanceData={...attendanceData,error:'Mất kết nối tạm thời; đang giữ dữ liệu gần nhất. Bấm Cập nhật để thử lại.'};}
+    finally{attendanceLoading=false;if(activeSession===-1)renderAttendanceResult();}
+  }
+  function renderAttendanceResult(){window.GiaLaiAttendance.render(dashboard,attendanceData,{loading:false});}
   async function loadCourse() {
     if(courseLoading || activeSession!==0) return;
     courseLoading=true;render();
@@ -1350,10 +1375,12 @@
     loadData(true);
   });
   loadData();
-  if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden && activeSession!==0) loadData(false); }, Number(config.refreshSeconds) * 1000);
+  if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden && activeSession>0) loadData(false); }, Number(config.refreshSeconds) * 1000);
   const courseTicker=setInterval(()=>{if(!document.hidden&&activeSession===0)loadCourse();},30000);
   const countdownTicker = setInterval(updateCountdowns, 500);
-  window.addEventListener("focus", () => activeSession===0?loadCourse():loadData(false));
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) activeSession===0?loadCourse():loadData(false); });
-  window.addEventListener("beforeunload", () => { clearInterval(timer); clearInterval(countdownTicker);clearInterval(courseTicker); });
+  const attendanceTicker=setInterval(()=>{if(!document.hidden&&activeSession===-1)loadAttendance();},15000);
+  const refreshVisibleView=()=>activeSession===-1?loadAttendance():activeSession===0?loadCourse():loadData(false);
+  window.addEventListener("focus", refreshVisibleView);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshVisibleView(); });
+  window.addEventListener("beforeunload", () => { clearInterval(timer); clearInterval(countdownTicker);clearInterval(courseTicker);clearInterval(attendanceTicker); });
 })();
