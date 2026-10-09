@@ -653,10 +653,11 @@
     return renderTopParticipantsLeaderboard(session, leaders);
   }
   function _legacyLeaderboardNote() {
-    return "Tối đa 10 người · xếp theo điểm, ưu tiên nộp sớm";
+    return "Tối đa 5 người · xếp theo điểm, ưu tiên nộp sớm";
   }
 
   function renderTopParticipantsLeaderboard(session, participants, presentation = false) {
+    participants = participants.slice(0, 5);
     const label = participants.length === 1 ? "Top 1" : `Top ${participants.length}`;
     const isQuiz = session.kind === "quiz" || session.kind === "true_false";
     const methodNote = session.kind === "true_false" ? "Xếp theo số lựa chọn đúng, rồi số giải thích đạt, cuối cùng là thời gian" : isQuiz ? "Xếp theo số câu đúng, rồi thời gian hoàn thành" : session.kind === "ordering" ? "Xếp theo số bước đúng vị trí, rồi thời gian hoàn thành" : "Xếp theo số ý đúng, rồi thời gian hoàn thành";
@@ -724,7 +725,7 @@
     const participants = session.topParticipants?.length ? session.topParticipants : session.leaderboard || [];
     if (phaseOf(session) !== "CLOSED" || session.aiReviewPending || !participants.length) return;
     leaderboardDialogTitle.textContent = `Bảng vinh danh · Phiên ${session.id}`;
-    leaderboardDialogContent.innerHTML = `<p class="leaderboard-presentation-note">${escapeHtml(session.description || session.name)} · Chọn học viên để xem bài làm</p>${renderTopParticipantsLeaderboard(session, participants.slice(0, 10), true)}`;
+    leaderboardDialogContent.innerHTML = `<p class="leaderboard-presentation-note">${escapeHtml(session.description || session.name)} · Chọn học viên để xem bài làm</p>${renderTopParticipantsLeaderboard(session, participants.slice(0, 5), true)}`;
     bindParticipantControls(leaderboardDialogContent, session);
     leaderboardDialog.showModal();
     leaderboardDialogContent.scrollTop = 0;
