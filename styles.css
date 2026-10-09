@@ -656,6 +656,40 @@ footer { display: flex; justify-content: flex-end; gap: 16px; padding: 20px clam
 .presentation-content .ordering-ref-step { padding: 3px 5px; font-size: 10px; }
 .presentation-content .prompt-item-text, .presentation-content .ordering-ref-text { font-size: clamp(14px,1.05vw,16px); line-height: 1.32; font-weight: 600; }
 .presentation-content .prompt-question { margin-top: 10px; padding: 9px 12px; }
+.course-tab { width: auto !important; padding-inline: 16px !important; white-space: nowrap; }
+.course-intro { display: grid; gap: 10px; margin-bottom: 20px; padding: 20px 24px; }
+.course-intro p { margin: 0; }
+.course-warning { color: #8a4400; background: #fff3d4; border-left: 4px solid #dfa126; padding: 10px 14px; border-radius: 6px; }
+.course-podium-card { min-height: 290px; gap: 15px; text-align: center; }
+.course-unit-name { font-size: clamp(18px,1.6vw,25px); font-weight: 850; }
+.course-total { font-size: 42px; font-weight: 900; color: #173b60; }
+.course-total small { font-size: 17px; font-weight: 600; }
+.course-card-metrics { display: flex; justify-content: center; gap: 24px; }
+.course-card-metrics > span { display: grid; gap: 5px; font-size: 13px; }
+.course-card-metrics b { font-size: 20px; }
+.course-card-coverage { font-size: 13px; }
+.course-runners { display: grid; gap: 12px; margin-top: 22px; }
+.course-ranking-card { grid-template-columns: 46px 1fr 130px 220px auto !important; }
+.course-ranking-card .course-total { font-size: 26px; }
+.course-ranking-card .course-card-coverage { display: none; }
+.course-method { padding: 18px 24px; margin-top: 18px; line-height: 1.6; }
+.course-method summary { cursor: pointer; font-weight: 750; }
+.course-detail-dialog { padding: 0; }
+.course-detail-content { padding: 22px; }
+.course-detail-metrics { display: flex; flex-wrap: wrap; gap: 12px; background: #fff3d4; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+.course-table-wrap { overflow-x: auto; }
+.course-table { width: 100%; border-collapse: collapse; text-align: left; }
+.course-table th { background: #173b60; color: white; }
+.course-table th,.course-table td { padding: 12px; border-bottom: 1px solid #d8e1ed; }
+.course-people { display: grid; gap: 8px; }
+.course-people button { display: flex; gap: 15px; justify-content: space-between; background: #fff; color: #173b60; border: 1px solid #c4d5e8; border-radius: 8px; padding: 12px; font: inherit; cursor: pointer; text-align: left; }
+.course-person-result { margin-top: 20px; padding-top: 15px; border-top: 1px solid #d8e1ed; }
+.course-person-result blockquote,.course-person-result li p { white-space: pre-wrap; line-height: 1.6; }
+@media(max-width:760px) {
+  .course-ranking-card { grid-template-columns: 36px 1fr !important; }
+  .course-ranking-card .course-total,.course-ranking-card .course-card-metrics,.course-ranking-card .podium-cta { grid-column: 2; }
+  .course-people button { flex-direction: column; gap: 6px; }
+}
 .demo-countdown { color: #9a4c0b; font-size: 20px; font-variant-numeric: tabular-nums; }
 [hidden] { display: none !important; }
 

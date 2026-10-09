@@ -51,6 +51,8 @@
   }
 
   let payload = null;
+  let courseData = null;
+  let courseLoading = false;
   let activeSession = getSessionFromUrl();
   let selectedQuestion = 0;
   let responseSearch = "";
@@ -148,6 +150,7 @@
   }
 
   function getSessionFromUrl() {
+    if (urlParams.get("view") === "course") return 0;
     const value = Number(urlParams.get("phien"));
     return value >= 1 && value <= 7 ? value : 1;
   }
@@ -316,6 +319,17 @@
     captureUiState();
     const sessions = payload?.sessions || [];
     renderNav(sessions);
+    if (activeSession === 0) {
+      sessionTitle.textContent = "Tổng kết khóa · Gia Lai";
+      subtitle.textContent = "Vinh danh đơn vị tích cực và đạt thành tích cao";
+      sessionControl.hidden = true;
+      globalTimerBanner.hidden = true;
+      floatingMetrics.hidden = true;
+      window.GiaLaiCourse.render(dashboard,courseData,{loading:courseLoading,adminUrl:adminRequested?config.adminUrl:"",email:adminEntryEmail.value});
+      if (!courseData && !courseLoading) loadCourse();
+      return;
+    }
+    if (adminRequested || fakeMode) sessionControl.hidden = false;
     const session = sessions.find(item => Number(item.id) === activeSession) || sessions[0];
     if (!session) {
       dashboard.innerHTML = '<div class="empty">Chưa có cấu hình dữ liệu phiên.</div>';
@@ -541,13 +555,20 @@
     nav.innerHTML = sessions.map(session => {
       const phase = phaseOf(session);
       return `<button class="session-tab ${Number(session.id) === activeSession ? "active" : ""}" data-session="${session.id}" type="button" aria-label="Phiên ${session.id}"><span>${session.id}</span><i class="tab-phase ${phase.toLowerCase()}"></i></button>`;
-    }).join("");
+    }).join("") + `<button class="session-tab course-tab ${activeSession===0?"active":""}" data-course type="button">Tổng kết khóa</button>`;
+    nav.querySelector("[data-course]").addEventListener("click",()=>{
+      activeSession=0;
+      const params=new URLSearchParams(location.search);params.set("view","course");params.delete("phien");
+      history.replaceState({},"",`${location.pathname}?${params.toString()}`);
+      render();loadCourse();scrollTo({top:0,behavior:"smooth"});
+    });
     nav.querySelectorAll("[data-session]").forEach(button => button.addEventListener("click", () => {
       activeSession = Number(button.dataset.session);
       selectedQuestion = 0;
       responseSearch = "";
       closedLivePreview = false;
       const params = new URLSearchParams(location.search);
+      params.delete("view");
       params.set("phien", activeSession);
       history.replaceState({}, "", `${location.pathname}?${params.toString()}`);
       render();
@@ -1196,7 +1217,23 @@
     adminEntryDialog.close();
   });
   adminButton.addEventListener("click", () => adminEntryDialog.showModal());
-  document.getElementById("refresh-button").addEventListener("click", () => loadData(true));
+  document.getElementById("refresh-button").addEventListener("click", () => {if(activeSession!==0)loadData(true);});
+  async function loadCourse() {
+    if(courseLoading || activeSession!==0) return;
+    courseLoading=true;render();
+    try {
+      if(fakeMode) { courseData=window.GiaLaiCourse.demo(); }
+      else {
+        const separator=config.apiUrl.includes("?")?"&":"?";
+        const data=await fetchJsonp(`${config.apiUrl}${separator}course=1&_=${Date.now()}`,60000);
+        if(!data || !Array.isArray(data.top)||!Array.isArray(data.includedSessions))throw Error("Tổng kết chưa đúng cấu trúc");
+        courseData=data;
+      }
+    } catch(error) {courseData={...(courseData||{}),error:"Chưa cập nhật được tổng kết. Bấm Cập nhật để thử lại.",top:courseData?.top||[],includedSessions:courseData?.includedSessions||[]};}
+    finally {courseLoading=false;if(activeSession===0)render();}
+  }
+  window.addEventListener("gia-lai-course-refresh",()=>loadCourse());
+  document.getElementById("refresh-button").addEventListener("click",()=>{if(activeSession===0)loadCourse();});
   document.getElementById("fullscreen-button").addEventListener("click", () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); });
   document.getElementById("qr-dialog-close").addEventListener("click", () => qrDialog.close());
   document.getElementById("presentation-dialog-close").addEventListener("click", () => presentationDialog.close());
@@ -1291,6 +1328,7 @@
       return;
     }
     if (event.data?.type !== "dashboard-session-updated") return;
+    courseData=null;
     pendingSessionActions.delete(Number(event.data.sessionId));
     closeControlPanel();
     controlSessionStates.set(Number(event.data.sessionId), {
@@ -1299,6 +1337,7 @@
       timerStartedAt: event.data.timerStartedAt || null,
       timerEndsAt: event.data.timerEndsAt || null,
       closedAt: event.data.closedAt || null
+      ,...Object.fromEntries(["currentResponses","totalResponses","participatingUnits","totalUnits","missingUnits","unitBreakdown"].filter(key=>event.data[key]!==undefined).map(key=>[key,event.data[key]]))
     });
     const session = payload?.sessions?.find(item => Number(item.id) === Number(event.data.sessionId));
     if (session) {
@@ -1309,9 +1348,10 @@
     loadData(true);
   });
   loadData();
-  if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden) loadData(false); }, Number(config.refreshSeconds) * 1000);
+  if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden && activeSession!==0) loadData(false); }, Number(config.refreshSeconds) * 1000);
+  const courseTicker=setInterval(()=>{if(!document.hidden&&activeSession===0)loadCourse();},30000);
   const countdownTicker = setInterval(updateCountdowns, 500);
   window.addEventListener("focus", () => loadData(false));
   document.addEventListener("visibilitychange", () => { if (!document.hidden) loadData(false); });
-  window.addEventListener("beforeunload", () => { clearInterval(timer); clearInterval(countdownTicker); });
+  window.addEventListener("beforeunload", () => { clearInterval(timer); clearInterval(countdownTicker);clearInterval(courseTicker); });
 })();
