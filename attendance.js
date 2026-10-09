@@ -4,10 +4,41 @@
   let selected='2026-10-10',slide,ownsFullscreen=false,query='',missingOpen=false;
   function leaveFullscreen(){if(ownsFullscreen&&document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});ownsFullscreen=false;}
   function close(){if(slide?.open)slide.close();leaveFullscreen();}
+  function loadImage(src){return new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Không tải được ảnh QR/logo'));image.src=src;});}
+  function wrapSlideText(ctx,text,maxWidth){
+    const lines=[];let line='';
+    for(const word of text.split(/\s+/)){const next=line?line+' '+word:word;if(line&&ctx.measureText(next).width>maxWidth){lines.push(line);line=word;}else line=next;}
+    if(line)lines.push(line);return lines;
+  }
+  async function downloadSlide(day,course,button){
+    button.disabled=true;button.textContent='Đang tạo ảnh…';
+    try{
+      const [logo,qr]=await Promise.all([loadImage('assets/logo-kiem-toan-nha-nuoc.jpg'),loadImage(`assets/qr/attendance-${day.day}.png`)]);
+      const canvas=document.createElement('canvas');canvas.width=1920;canvas.height=1080;
+      const ctx=canvas.getContext('2d'),gradient=ctx.createLinearGradient(0,0,1920,1080);
+      gradient.addColorStop(0,'#f3f8fd');gradient.addColorStop(.55,'#ffffff');gradient.addColorStop(1,'#e4eef8');ctx.fillStyle=gradient;ctx.fillRect(0,0,1920,1080);
+      ctx.textAlign='center';ctx.fillStyle='#123b62';ctx.drawImage(logo,660,25,80,80);
+      ctx.font='700 28px Arial';ctx.fillText('KIỂM TOÁN NHÀ NƯỚC',1010,48);
+      ctx.font='700 22px Arial';ctx.fillText('TRƯỜNG ĐÀO TẠO VÀ BỒI DƯỠNG',1010,80);ctx.fillText('NGHIỆP VỤ KIỂM TOÁN',1010,107);
+      ctx.fillStyle='#a76b10';ctx.font='700 22px Arial';ctx.fillText('KHÓA ĐÀO TẠO',960,150);
+      ctx.fillStyle='#123b62';ctx.font='700 42px Arial';const lines=wrapSlideText(ctx,course,1720);lines.forEach((line,i)=>ctx.fillText(line,960,200+i*49));
+      // A 630px QR gives an integer 14px scale for this 45-module asset, including quiet zone.
+      ctx.imageSmoothingEnabled=false;ctx.drawImage(qr,645,278,630,630);ctx.imageSmoothingEnabled=true;
+      ctx.font='700 25px Arial';ctx.fillText('QUÉT MÃ ĐỂ ĐIỂM DANH',960,940);
+      ctx.font='20px Arial';ctx.fillText('Họ tên · Chức danh · Đơn vị công tác',960,972);
+      ctx.fillStyle='#a56409';ctx.font='700 38px Arial';ctx.fillText('ĐIỂM DANH NGÀY '+day.label,960,1024);
+      ctx.fillStyle='#123b62';ctx.font='18px Arial';ctx.fillText('Gia Lai, tháng 10 năm 2026',960,1056);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Không tạo được ảnh');
+      const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`Slide-diem-danh-Gia-Lai-${day.day}.png`;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }catch(error){alert('Chưa tải được ảnh slide. Vui lòng thử lại.');}
+    finally{button.disabled=false;button.textContent='Tải ảnh slide ↓';}
+  }
   function present(day,course){
     if(!slide){slide=document.createElement('dialog');slide.className='attendance-slide';document.body.appendChild(slide);slide.addEventListener('cancel',leaveFullscreen);slide.addEventListener('close',leaveFullscreen);}
     slide.innerHTML=`<button class="attendance-slide-close" type="button" aria-label="Đóng slide điểm danh">Đóng ×</button><header><img src="assets/logo-kiem-toan-nha-nuoc.jpg" alt="Logo Kiểm toán nhà nước"><div><strong>KIỂM TOÁN NHÀ NƯỚC</strong><span>TRƯỜNG ĐÀO TẠO VÀ BỒI DƯỠNG<br>NGHIỆP VỤ KIỂM TOÁN</span></div></header><div class="attendance-slide-course"><small>KHÓA ĐÀO TẠO</small><h1>${esc(course)}</h1></div><div class="attendance-slide-qr"><img src="assets/qr/attendance-${day.day}.png" alt="QR điểm danh ngày ${esc(day.label)}"><strong>QUÉT MÃ ĐỂ ĐIỂM DANH</strong><span>Họ tên · Chức danh · Đơn vị công tác</span></div><footer>ĐIỂM DANH NGÀY <b>${esc(day.label)}</b><span>Gia Lai, tháng 10 năm 2026</span></footer>`;
-    slide.querySelector('button').onclick=close;slide.showModal();
+    const closeButton=slide.querySelector('.attendance-slide-close'),actions=document.createElement('div');actions.className='attendance-slide-actions';closeButton.before(actions);actions.appendChild(closeButton);
+    const downloadButton=document.createElement('button');downloadButton.type='button';downloadButton.className='attendance-slide-download';downloadButton.textContent='Tải ảnh slide ↓';downloadButton.onclick=()=>downloadSlide(day,course,downloadButton);actions.prepend(downloadButton);
+    closeButton.onclick=close;slide.showModal();
     if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().then(()=>{ownsFullscreen=true;if(!slide.open)leaveFullscreen();}).catch(()=>{});
   }
   function render(root,data,{loading=false}={}){

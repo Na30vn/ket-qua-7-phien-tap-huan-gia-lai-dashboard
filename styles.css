@@ -1623,6 +1623,15 @@ footer { display: flex; justify-content: flex-end; gap: 16px; padding: 20px clam
 }
 /* Daily attendance, kept independent from training-session controls. */
 body:has(.attendance-slide[open]){overflow:hidden}
+.attendance-slide{--slide-qr-size:min(56dvh,calc(100dvh - 360px),65vw,650px);padding:18px 45px!important}
+.attendance-slide[open]{gap:10px!important}
+.attendance-slide header img{width:56px!important;height:56px!important}
+.attendance-slide header strong{font-size:19px!important}.attendance-slide header span{font-size:14px!important}
+.attendance-slide-course h1{font-size:clamp(22px,2.2vw,32px)!important;line-height:1.25!important;max-width:1400px!important;margin:6px auto!important}
+.attendance-slide-qr img{width:var(--slide-qr-size)!important;height:var(--slide-qr-size)!important;box-shadow:0 8px 30px #173b6010!important}
+.attendance-slide footer{padding:5px 0!important}.attendance-slide footer b{font-size:28px!important}
+.attendance-slide-actions{position:absolute;right:18px;top:16px;display:flex;gap:10px;z-index:2}.attendance-slide-actions button{position:static;padding:10px 14px;border:1px solid #c2cfdd;border-radius:9px;background:white;color:#153b62;font:inherit;font-size:14px;font-weight:700;cursor:pointer}.attendance-slide-actions .attendance-slide-download{background:#153b62;color:white;border-color:#153b62}.attendance-slide-actions button:disabled{opacity:.65;cursor:wait}
+@media(max-width:700px){.attendance-slide{--slide-qr-size:min(76vw,38dvh);padding:65px 15px 15px!important}.attendance-slide header img{width:45px!important;height:45px!important}.attendance-slide header strong{font-size:15px!important}.attendance-slide header span{font-size:12px!important}.attendance-slide-course h1{font-size:20px!important}.attendance-slide-actions{right:12px;top:12px;gap:7px}.attendance-slide-actions button{font-size:12px;padding:9px 12px}}
 .attendance-slide footer{display:block;padding:8px 0;background:transparent;border:0;text-align:center;color:#123b62}
 .attendance-qr-grid,.attendance-metrics{display:grid;gap:18px;grid-template-columns:repeat(2,minmax(0,1fr));margin:22px 0}
 .attendance-qr-card button{display:flex;align-items:center;gap:22px;width:100%;border:0;background:none;text-align:left;cursor:pointer;color:#153b62}
