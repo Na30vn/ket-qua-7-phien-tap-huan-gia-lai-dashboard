@@ -1205,6 +1205,7 @@
     adminEntryDialog.close();
     const session = payload?.sessions?.find(item => Number(item.id) === activeSession);
     if (session) updateQuickControl(session);
+    if (activeSession===0) render();
   });
   document.getElementById("admin-entry-public").addEventListener("click", () => {
     saveAccessPreference("public");
@@ -1215,6 +1216,7 @@
     controlFrame.removeAttribute("src");
     controlFrame.dataset.session = "";
     adminEntryDialog.close();
+    if (activeSession===0) render();
   });
   adminButton.addEventListener("click", () => adminEntryDialog.showModal());
   document.getElementById("refresh-button").addEventListener("click", () => {if(activeSession!==0)loadData(true);});
@@ -1351,7 +1353,7 @@
   if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden && activeSession!==0) loadData(false); }, Number(config.refreshSeconds) * 1000);
   const courseTicker=setInterval(()=>{if(!document.hidden&&activeSession===0)loadCourse();},30000);
   const countdownTicker = setInterval(updateCountdowns, 500);
-  window.addEventListener("focus", () => loadData(false));
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) loadData(false); });
+  window.addEventListener("focus", () => activeSession===0?loadCourse():loadData(false));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) activeSession===0?loadCourse():loadData(false); });
   window.addEventListener("beforeunload", () => { clearInterval(timer); clearInterval(countdownTicker);clearInterval(courseTicker); });
 })();

@@ -12,8 +12,8 @@
     }
     node.innerHTML=`<header class="presentation-head"><div><span>GIA LAI · TỔNG KẾT KHÓA</span><h2>${esc(title)}</h2></div><button class="presentation-close" type="button" data-close>Đóng ×</button></header><div class="${wide?'leaderboard-dialog-content':'course-detail-content'}">${content}</div>`;
     node.querySelector('[data-close]').onclick=()=>node.close();
-    node.querySelectorAll('[data-unit]').forEach(button=>button.onclick=()=>openUnit(Number(button.dataset.unit)));
-    node.querySelectorAll('[data-person]').forEach(button=>button.onclick=()=>openPerson(Number(button.dataset.unitIndex),Number(button.dataset.person)));
+    const shown=current;
+    node.querySelectorAll('[data-unit]').forEach(button=>button.onclick=()=>openUnit(Number(button.dataset.unit),shown));
     if(!node.open)node.showModal();return node;
   }
   function medal(rank) {
@@ -24,15 +24,19 @@
     const card=(unit,index,featured)=>`<button type="button" class="top-participant-card ${featured?'podium-card course-podium-card':'ranking-card course-ranking-card'} rank-${unit.rank}" data-unit="${index}" aria-label="Xem chi tiết ${esc(unit.unit)}">${featured?medal(unit.rank):`<span class="rank-badge">#${unit.rank}</span>`}<span class="course-unit-name">${esc(unit.unit)}</span><span class="course-total">${number(unit.total)}<small>/100</small></span><span class="course-card-metrics"><span>Thành tích <b>${number(unit.achievement)}</b></span><span>Tham gia <b>${number(unit.participation)}%</b></span></span><span class="course-card-coverage">Có bài ở ${unit.covered}/${unit.totalSessions} phiên</span><span class="podium-cta">Xem chi tiết <b>→</b></span></button>`;
     return `<div class="top-podium" data-count="${Math.min(3,data.top.length)}">${data.top.slice(0,3).map((unit,index)=>card(unit,index,true)).join('')}</div>${data.top.length>3?`<div class="course-runners">${data.top.slice(3).map((unit,index)=>card(unit,index+3,false)).join('')}</div>`:''}`;
   }
-  function openUnit(index) {
-    const unit=current?.top[index];if(!unit)return;
-    dialog('unit',unit.unit,`<div class="course-detail-metrics"><strong>Điểm tổng ${number(unit.total)}/100</strong><span>Thành tích ${number(unit.achievement)}/100</span><span>Tham gia ${number(unit.participation)}%</span></div><p>${unit.registered} người đăng ký · ${unit.accepted}/${unit.registered*unit.totalSessions} lượt người–phiên hợp lệ</p><h3>Kết quả từng phiên</h3><div class="course-table-wrap"><table class="course-table"><thead><tr><th>Phiên</th><th>Người tham gia không trùng</th><th>Điểm trung bình /100</th></tr></thead><tbody>${unit.sessions.map(session=>`<tr><td>Phiên ${session.id}</td><td>${session.participants}</td><td>${number(session.average)}</td></tr>`).join('')}</tbody></table></div><h3>Học viên có bài được tính</h3><div class="course-people">${unit.people.map((person,i)=>`<button type="button" data-person="${i}" data-unit-index="${index}"><strong>${esc(person.name)}</strong><span>${person.results.length} phiên · Xem bài làm →</span></button>`).join('')}</div><p class="course-method">Điểm tổng = 70% thành tích + 30% tham gia. Mỗi người chỉ tính một bài tốt nhất trong từng phiên.</p>`);
+  function openUnit(index,shown=current) {
+    const unit=shown?.top[index];if(!unit)return;
+    const node=dialog('unit',unit.unit,`<div class="course-detail-metrics"><strong>Điểm tổng ${number(unit.total)}/100</strong><span>Thành tích ${number(unit.achievement)}/100</span><span>Tham gia ${number(unit.participation)}%</span></div><p>${unit.registered} người đăng ký · ${unit.accepted}/${unit.registered*unit.totalSessions} lượt người–phiên hợp lệ</p><h3>Kết quả từng phiên</h3><div class="course-table-wrap"><table class="course-table"><thead><tr><th>Phiên</th><th>Người tham gia không trùng</th><th>Điểm trung bình /100</th></tr></thead><tbody>${unit.sessions.map(session=>`<tr><td>Phiên ${session.id}</td><td>${session.participants}</td><td>${number(session.average)}</td></tr>`).join('')}</tbody></table></div><h3>Học viên có bài được tính</h3><div class="course-people">${unit.people.map((person,i)=>`<button type="button" data-person="${i}"><strong>${esc(person.name)}</strong><span>${person.results.length} phiên · Xem bài làm →</span></button>`).join('')}</div><p class="course-method">Điểm tổng = 70% thành tích + 30% tham gia. Mỗi người chỉ tính một bài tốt nhất trong từng phiên.</p>`);
+    node.querySelectorAll('[data-person]').forEach(button=>button.onclick=()=>openPerson(unit.people[Number(button.dataset.person)]));
   }
-  function openPerson(unitIndex,index) {
-    const person=current?.top[unitIndex]?.people[index];if(!person)return;
+  function openPerson(person) {
+    if(!person)return;
     dialog('person',person.name,`<p>${esc(person.unit)}</p>${person.results.map(result=>`<section class="course-person-result"><h3>Phiên ${result.sessionId} · ${number(result.points)}/100</h3><p>Nộp sau ${Math.floor(result.durationSeconds/60)} phút ${result.durationSeconds%60} giây từ lúc mở đợt phiên</p>${result.essay?`<blockquote>${esc(result.essay)}</blockquote>`:`<ol>${result.answers.map(answer=>`<li>${typeof answer==='object'?`<strong>${esc(answer.choice)}</strong><p>${esc(answer.explanation)}</p>`:esc(answer)}</li>`).join('')}</ol>`}</section>`).join('')}`);
   }
   function render(root,data,options={}) {
+    if(current && data && (data.status==='WAITING_RECHOT' || JSON.stringify(current.includedSessions)!==JSON.stringify(data.includedSessions))) {
+      Array.from(dialogs.values()).reverse().forEach(node=>{if(node.open)node.close();});
+    }
     current=data;
     const label=data?.status==='OFFICIAL'?'Chính thức':data?.status==='WAITING_RECHOT'?'Chờ chốt lại':'Tạm thời';
     root.dataset.kind='course';root.dataset.phase='course';
