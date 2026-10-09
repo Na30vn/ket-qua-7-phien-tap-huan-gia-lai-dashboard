@@ -323,7 +323,7 @@
     renderNav(sessions);
     if (activeSession === -1) {
       sessionTitle.textContent="Điểm danh · Gia Lai";subtitle.textContent="Ngày 10/10 và 11/10/2026";
-      sessionControl.hidden=true;globalTimerBanner.hidden=true;floatingMetrics.hidden=true;
+      sessionControl.hidden=true;controlFab.hidden=true;globalTimerBanner.hidden=true;floatingMetrics.hidden=true;
       window.GiaLaiAttendance.render(dashboard,attendanceData,{loading:attendanceLoading});
       if(!attendanceData&&!attendanceLoading)loadAttendance();return;
     }
