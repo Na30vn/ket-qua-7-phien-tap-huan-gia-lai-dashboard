@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = value => String(value ?? '').normalize('NFC').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number = value => value==null?'—':Number(value).toLocaleString('vi-VN',{maximumFractionDigits:1});
   const elapsed = value => {
     const seconds=Math.max(0,Math.floor(Number(value||0)/1000));

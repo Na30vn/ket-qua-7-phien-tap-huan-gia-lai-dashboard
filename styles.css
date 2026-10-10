@@ -884,9 +884,9 @@ footer { display: flex; justify-content: flex-end; gap: 16px; padding: 20px clam
 .rank-2 .podium-medal { color: #94a3b8; }
 .rank-3 .podium-medal { color: #b8754d; }
 .podium-identity { display: flex; align-items: center; gap: 18px; min-height: 80px; }
-.podium-avatar { display: grid; place-items: center; width: 72px; height: 72px; flex: 0 0 72px; border-radius: 50%; background: #ffffff70; border: 1px solid #ffffff80; font: 700 25px Georgia, serif; color: #173655; }
+.podium-avatar { display: grid; place-items: center; width: 72px; height: 72px; flex: 0 0 72px; border-radius: 50%; background: #ffffff70; border: 1px solid #ffffff80; font: 700 25px "Segoe UI", Arial, system-ui, sans-serif; color: #173655; }
 .podium-card .participant-info { min-width: 0; }
-.podium-card .participant-name { font: 700 23px/1.25 Georgia, serif; color: #173655; }
+.podium-card .participant-name { font: 700 23px/1.35 "Segoe UI", Arial, system-ui, sans-serif; letter-spacing: normal; color: #173655; }
 .podium-card .participant-unit { font-size: 15px !important; font-weight: 500; }
 .podium-stats { display: grid; grid-template-columns: 1fr 1fr; width: 100%; border-top: 1px solid #17365520; padding-top: 13px; }
 .podium-stats > span { display: flex; align-items: flex-start; gap: 9px; padding: 0 9px; }
@@ -974,6 +974,8 @@ footer { display: flex; justify-content: flex-end; gap: 16px; padding: 20px clam
 }
 .participant-name {
   display: block;
+  font-family: "Segoe UI", Arial, system-ui, sans-serif;
+  letter-spacing: normal;
   font-size: 16px;
   color: #0f172a;
   line-height: 1.25;

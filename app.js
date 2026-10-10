@@ -83,7 +83,7 @@
 
   configureAdminLinks();
 
-  const escapeHtml = (value = "") => String(value)
+  const escapeHtml = (value = "") => String(value).normalize("NFC")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
