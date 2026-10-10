@@ -330,7 +330,7 @@
     window.GiaLaiAttendance?.close();
     if (activeSession === 0) {
       sessionTitle.textContent = "Tổng kết khóa · Gia Lai";
-      subtitle.textContent = "Vinh danh đơn vị tích cực và đạt thành tích cao";
+      subtitle.textContent = "Vinh danh đơn vị tích cực và cá nhân xuất sắc";
       sessionControl.hidden = true;
       globalTimerBanner.hidden = true;
       floatingMetrics.hidden = true;

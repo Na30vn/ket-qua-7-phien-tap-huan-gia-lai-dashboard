@@ -677,6 +677,29 @@ footer { display: flex; justify-content: flex-end; gap: 16px; padding: 20px clam
 .course-detail-dialog { padding: 0; }
 .course-detail-content { padding: 22px; }
 .course-detail-metrics { display: flex; flex-wrap: wrap; gap: 12px; background: #fff3d4; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+.course-score-breakdown { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; margin-bottom: 18px; }
+.course-score-breakdown > span:not(.course-score-plus) { display: grid; gap: 5px; padding: 14px 16px; border: 1px solid #e0c183; border-radius: 10px; background: #fffaf0; }
+.course-score-breakdown strong { color: #5d4828; font-size: 14px; }
+.course-score-breakdown b { color: #173b60; font-size: 23px; font-variant-numeric: tabular-nums; }
+.course-score-breakdown small { color: #6b5a43; font-size: 12px; }
+.course-score-plus { color: #9b701d; font-size: 25px; font-weight: 800; }
+.course-individual-leaderboard { margin-top: 24px; }
+.course-individual-note { margin: 0; color: #6c552d; font-size: 14px; line-height: 1.5; }
+.course-individual-podium .podium-identity { width: 100%; min-height: 86px; text-align: left; }
+.course-individual-podium .participant-name { overflow-wrap: anywhere; }
+.course-individual-score { display: grid; gap: 4px; text-align: center; }
+.course-individual-score strong { color: #173b60; font-size: 37px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.course-individual-score small { font-size: 16px; font-weight: 600; }
+.course-individual-score > span { color: #65543d; font-size: 12px; font-weight: 750; }
+.course-individual-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px 16px; color: #46566b; font-size: 12px; }
+.course-individual-meta b { color: #173b60; font-variant-numeric: tabular-nums; }
+.course-individual-ranking.ranking-card { grid-template-columns: 40px minmax(0,1fr) 110px 180px auto; }
+.course-individual-ranking .course-individual-score strong { font-size: 26px; }
+.course-individual-ranking .course-individual-meta { display: grid; gap: 6px; }
+.course-individual-ranking .podium-cta { min-width: 150px; }
+.course-individual-empty { margin-top: 24px; }
+.course-individual-empty h3 { margin-top: 0; color: #173b60; }
+.course-person-summary { margin-top: 15px; }
 .course-table-wrap { overflow-x: auto; }
 .course-table { width: 100%; border-collapse: collapse; text-align: left; }
 .course-table th { background: #173b60; color: white; }
@@ -688,6 +711,13 @@ footer { display: flex; justify-content: flex-end; gap: 16px; padding: 20px clam
 @media(max-width:760px) {
   .course-ranking-card { grid-template-columns: 36px 1fr !important; }
   .course-ranking-card .course-total,.course-ranking-card .course-card-metrics,.course-ranking-card .podium-cta { grid-column: 2; }
+  .course-individual-ranking.ranking-card { grid-template-columns: 36px minmax(0,1fr); }
+  .course-individual-ranking .course-individual-score,.course-individual-ranking .course-individual-meta,.course-individual-ranking .podium-cta { grid-column: 2; text-align: left; }
+  .course-individual-ranking .podium-cta { justify-self: start; }
+  .course-individual-ranking .course-individual-score { display: flex; align-items: baseline; gap: 8px; }
+  .course-score-breakdown { gap: 7px; }
+  .course-score-breakdown > span:not(.course-score-plus) { padding: 11px; }
+  .course-score-breakdown strong { font-size: 12px; }
   .course-people button { flex-direction: column; gap: 6px; }
 }
 .demo-countdown { color: #9a4c0b; font-size: 20px; font-variant-numeric: tabular-nums; }
