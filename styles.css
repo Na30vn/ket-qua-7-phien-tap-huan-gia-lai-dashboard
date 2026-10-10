@@ -1706,3 +1706,9 @@ body:has(.attendance-slide[open]){overflow:hidden}
 .certificate-tabs [aria-pressed="true"] { color:#fff; border-color:#16415b; background:#16415b; }
 .certificate-controls [data-close] { margin-left:auto; }
 @media(max-width:700px) { .certificate-launch { align-items:flex-start; flex-direction:column; }.certificate-launch-actions{text-align:left}.certificate-head {gap:10px}.certificate-round span{display:none}.certificate-list{gap:4px;padding:8px;}.certificate-list li{font-size:11px;gap:4px;padding:3px}.certificate-number{width:20px;font-size:10px}.certificate-controls{gap:4px;padding:6px}.certificate-controls button{padding:6px;font-size:11px}.certificate-tabs button{min-width:48px}.certificate-head>div>span{display:none} }
+.button-survey { background:#428ff3; border-color:#428ff3; color:#fff; }
+.survey-screen { width:100vw; max-width:none; height:100vh; height:100dvh; max-height:none; padding:0; margin:0; border:0; border-radius:0; background:#fff; }
+.survey-screen[open] { display:flex; flex-direction:column; }
+.survey-image { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:12px; overflow:hidden; }
+.survey-image img { display:block; height:100%; width:100%; object-fit:contain; }
+.survey-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:12px; background:#edf4fb; }
