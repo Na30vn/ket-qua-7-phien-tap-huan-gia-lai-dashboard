@@ -1712,3 +1712,5 @@ body:has(.attendance-slide[open]){overflow:hidden}
 .survey-image { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:12px; overflow:hidden; }
 .survey-image img { display:block; height:100%; width:100%; object-fit:contain; }
 .survey-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:12px; background:#edf4fb; }
+.survey-actions .button { color:#173a58; background:white; border-color:#c5d7e6; text-decoration:none; }
+.survey-actions .button-survey { color:white; background:#428ff3; border-color:#428ff3; }
