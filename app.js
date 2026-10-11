@@ -1253,8 +1253,20 @@
       if(fakeMode) { courseData=window.GiaLaiCourse.demo(); }
       else {
         const separator=config.apiUrl.includes("?")?"&":"?";
-        const data=await fetchJsonp(`${config.apiUrl}${separator}course=1&_=${Date.now()}`,60000);
+        const [courseResult,sessionResult]=await Promise.allSettled([
+          fetchJsonp(`${config.apiUrl}${separator}course=1&_=${Date.now()}`,60000),
+          fetchJsonp(`${config.apiUrl}${separator}_=${Date.now()}`,60000)
+        ]);
+        if(courseResult.status==='rejected')throw courseResult.reason;
+        const data=courseResult.value;
         if(!data || !Array.isArray(data.top)||!Array.isArray(data.includedSessions))throw Error("Tổng kết chưa đúng cấu trúc");
+        if(sessionResult.status==='fulfilled'&&Array.isArray(sessionResult.value?.sessions)) {
+          const sessions=sessionResult.value.sessions.filter(session=>session.phase!=='NOT_STARTED');
+          const normalize=value=>String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi-VN');
+          const answered=new Set(sessions.flatMap(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0).map(item=>normalize(item.unit))));
+          const units=window.GiaLaiCertificates?.units;
+          if(Array.isArray(units))data.noAnswerUnitNames=units.filter(unit=>!answered.has(normalize(unit)));
+        }
         courseData=data;
       }
     } catch(error) {courseData={...(courseData||{}),error:"Chưa cập nhật được tổng kết. Bấm Cập nhật để thử lại.",top:courseData?.top||[],includedSessions:courseData?.includedSessions||[]};}
