@@ -1265,7 +1265,16 @@
           const normalize=value=>String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi-VN');
           const answered=new Set(sessions.flatMap(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0).map(item=>normalize(item.unit))));
           const units=window.GiaLaiCertificates?.units;
-          if(Array.isArray(units))data.noAnswerUnitNames=units.filter(unit=>!answered.has(normalize(unit)));
+          if(Array.isArray(units)) {
+            data.noAnswerUnitNames=units.filter(unit=>!answered.has(normalize(unit)));
+            const registered=new Set(units.map(normalize)),outside=new Map();
+            sessions.forEach(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0&&!registered.has(normalize(item.unit))).forEach(item=>{
+              const key=normalize(item.unit);
+              if(!outside.has(key))outside.set(key,{unit:item.unit,sessions:[],submissions:0});
+              const entry=outside.get(key);entry.sessions.push(session.id);entry.submissions+=Number(item.count);
+            }));
+            data.outsideUnits=Array.from(outside.values()).sort((a,b)=>a.unit.localeCompare(b.unit,'vi'));
+          }
         }
         courseData=data;
       }
