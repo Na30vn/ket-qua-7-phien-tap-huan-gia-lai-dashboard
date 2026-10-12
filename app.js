@@ -54,6 +54,7 @@
   let courseData = null;
   let attendanceData = null, attendanceLoading = false;
   let courseLoading = false;
+  let courseLoadCompletion = null;
   let activeSession = getSessionFromUrl();
   let selectedQuestion = 0;
   let responseSearch = "";
@@ -62,6 +63,7 @@
   let lastLivePayload = null;
   let countdownExpired = false;
   let isLoading = false;
+  let sessionLoadCompletion = null;
   let refreshQueued = false;
   let forceRefreshQueued = false;
   const jsonpCallbacks = Object.create(null);
@@ -219,6 +221,11 @@
   }
 
   async function loadData(forceRefresh = false) {
+    if (activeSession === 0) return loadCourse();
+    if (courseLoading && courseLoadCompletion) {
+      await courseLoadCompletion;
+      if (activeSession === 0) return;
+    }
     if (isLoading) {
       refreshQueued = true;
       forceRefreshQueued ||= forceRefresh === true;
@@ -226,6 +233,8 @@
     }
     const requestStartedAt = Date.now();
     isLoading = true;
+    let finishSessionLoad;
+    sessionLoadCompletion = new Promise(resolve => {finishSessionLoad = resolve;});
     if (!payload) setStatus("loading", "Đang tải dữ liệu…");
     try {
       const dataUrl = fakeMode ? (config.fakeDataUrl || "data/fake.json") : config.apiUrl;
@@ -264,6 +273,8 @@
       }
     } finally {
       isLoading = false;
+      finishSessionLoad();
+      sessionLoadCompletion = null;
       if (refreshQueued) {
         const force = forceRefreshQueued;
         refreshQueued = false;
@@ -561,7 +572,8 @@
   }
 
   function renderNav(sessions) {
-    nav.innerHTML = sessions.map(session => {
+    const navSessions=sessions.length?sessions:activeSession===0?(courseData?.choices?.length?courseData.choices:Array.from({length:7},(_,i)=>({id:i+1}))):sessions;
+    nav.innerHTML = navSessions.map(session => {
       const phase = phaseOf(session);
       return `<button class="session-tab ${Number(session.id) === activeSession ? "active" : ""}" data-session="${session.id}" type="button" aria-label="Phiên ${session.id}"><span>${session.id}</span><i class="tab-phase ${phase.toLowerCase()}"></i></button>`;
     }).join("") + `<button class="session-tab course-tab ${activeSession===0?"active":""}" data-course type="button">Tổng kết khóa</button><button class="session-tab course-tab ${activeSession===-1?"active":""}" data-attendance type="button">Điểm danh</button>`;
@@ -585,6 +597,7 @@
       params.set("phien", activeSession);
       history.replaceState({}, "", `${location.pathname}?${params.toString()}`);
       render();
+      loadData();
       scrollTo({ top: 0, behavior: "smooth" });
     }));
   }
@@ -1248,8 +1261,14 @@
   function renderAttendanceResult(){window.GiaLaiAttendance.render(dashboard,attendanceData,{loading:false});}
   async function loadCourse() {
     if(courseLoading || activeSession!==0) return;
-    courseLoading=true;render();
+    courseLoading=true;
+    let finishCourseLoad;
+    courseLoadCompletion=new Promise(resolve=>{finishCourseLoad=resolve;});
+    render();
+    if(!courseData)setStatus("loading","Đang tải tổng kết…");
     try {
+      if(isLoading&&sessionLoadCompletion)await sessionLoadCompletion;
+      if(activeSession!==0)return;
       if(fakeMode) { courseData=window.GiaLaiCourse.demo(); }
       else {
         const separator=config.apiUrl.includes("?")?"&":"?";
@@ -1278,8 +1297,17 @@
         }
         courseData=data;
       }
-    } catch(error) {courseData={...(courseData||{}),error:"Chưa cập nhật được tổng kết. Bấm Cập nhật để thử lại.",top:courseData?.top||[],includedSessions:courseData?.includedSessions||[]};}
-    finally {courseLoading=false;if(activeSession===0)render();}
+      if(activeSession===0)setStatus(fakeMode?"demo":"live",fakeMode?"Dữ liệu giả lập":"Dữ liệu trực tiếp");
+    } catch(error) {
+      courseData={...(courseData||{}),error:"Chưa cập nhật được tổng kết. Bấm Cập nhật để thử lại.",top:courseData?.top||[],includedSessions:courseData?.includedSessions||[]};
+      if(activeSession===0)setStatus("error","Chưa kết nối được tổng kết");
+    }
+    finally {
+      courseLoading=false;
+      finishCourseLoad();
+      courseLoadCompletion=null;
+      if(activeSession===0)render();
+    }
   }
   window.addEventListener("gia-lai-course-refresh",()=>loadCourse());
   document.getElementById("refresh-button").addEventListener("click",()=>{if(activeSession===0)loadCourse();});
@@ -1396,7 +1424,7 @@
     }
     loadData(true);
   });
-  loadData();
+  if(activeSession===0)loadCourse();else loadData();
   if (Number(config.refreshSeconds) > 0) timer = setInterval(() => { if (!document.hidden && activeSession>0) loadData(false); }, Number(config.refreshSeconds) * 1000);
   const courseTicker=setInterval(()=>{if(!document.hidden&&activeSession===0)loadCourse();},30000);
   const countdownTicker = setInterval(updateCountdowns, 500);
