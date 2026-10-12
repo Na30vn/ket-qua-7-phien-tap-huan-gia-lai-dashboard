@@ -1253,27 +1253,27 @@
       if(fakeMode) { courseData=window.GiaLaiCourse.demo(); }
       else {
         const separator=config.apiUrl.includes("?")?"&":"?";
-        const [courseResult,sessionResult]=await Promise.allSettled([
-          fetchJsonp(`${config.apiUrl}${separator}course=1&_=${Date.now()}`,60000),
-          fetchJsonp(`${config.apiUrl}${separator}_=${Date.now()}`,60000)
-        ]);
-        if(courseResult.status==='rejected')throw courseResult.reason;
-        const data=courseResult.value;
+        const data=await fetchJsonp(`${config.apiUrl}${separator}course=1&_=${Date.now()}`,60000);
         if(!data || !Array.isArray(data.top)||!Array.isArray(data.includedSessions))throw Error("Tổng kết chưa đúng cấu trúc");
-        if(sessionResult.status==='fulfilled'&&Array.isArray(sessionResult.value?.sessions)) {
-          const sessions=sessionResult.value.sessions.filter(session=>session.phase!=='NOT_STARTED');
-          const normalize=value=>String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi-VN');
-          const answered=new Set(sessions.flatMap(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0).map(item=>normalize(item.unit))));
-          const units=Array.isArray(data.registeredUnits)?data.registeredUnits:window.GiaLaiCertificates?.units;
-          if(Array.isArray(units)) {
-            data.noAnswerUnitNames=units.filter(unit=>!answered.has(normalize(unit)));
-            const registered=new Set(units.map(normalize)),outside=new Map();
-            sessions.forEach(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0&&!registered.has(normalize(item.unit))).forEach(item=>{
-              const key=normalize(item.unit);
-              if(!outside.has(key))outside.set(key,{unit:item.unit,sessions:[],submissions:0});
-              const entry=outside.get(key);entry.sessions.push(session.id);entry.submissions+=Number(item.count);
-            }));
-            data.outsideUnits=Array.from(outside.values()).sort((a,b)=>a.unit.localeCompare(b.unit,'vi'));
+        // The course API supplies both lists; older deployments need a sequential fallback.
+        if(!Array.isArray(data.noAnswerUnitNames)||!Array.isArray(data.outsideUnits)) {
+          let sessionData;
+          try {sessionData=await fetchJsonp(`${config.apiUrl}${separator}_=${Date.now()}`,60000);} catch(_) {}
+          if(Array.isArray(sessionData?.sessions)) {
+            const sessions=sessionData.sessions.filter(session=>session.phase!=='NOT_STARTED');
+            const normalize=value=>String(value||'').normalize('NFC').trim().toLocaleLowerCase('vi-VN');
+            const answered=new Set(sessions.flatMap(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0).map(item=>normalize(item.unit))));
+            const units=Array.isArray(data.registeredUnits)?data.registeredUnits:window.GiaLaiCertificates?.units;
+            if(Array.isArray(units)) {
+              if(!Array.isArray(data.noAnswerUnitNames))data.noAnswerUnitNames=units.filter(unit=>!answered.has(normalize(unit)));
+              const registered=new Set(units.map(normalize)),outside=new Map();
+              sessions.forEach(session=>(session.unitBreakdown||[]).filter(item=>Number(item.count)>0&&!registered.has(normalize(item.unit))).forEach(item=>{
+                const key=normalize(item.unit);
+                if(!outside.has(key))outside.set(key,{unit:item.unit,sessions:[],submissions:0});
+                const entry=outside.get(key);entry.sessions.push(session.id);entry.submissions+=Number(item.count);
+              }));
+              if(!Array.isArray(data.outsideUnits))data.outsideUnits=Array.from(outside.values()).sort((a,b)=>a.unit.localeCompare(b.unit,'vi'));
+            }
           }
         }
         courseData=data;
